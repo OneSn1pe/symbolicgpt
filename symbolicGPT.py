@@ -40,8 +40,8 @@ device='gpu'
 scratch=True # if you want to ignore the cache and start for scratch
 numEpochs = 20 # number of epochs to train the GPT+PT model
 embeddingSize = 512 # the hidden dimension of the representation of both GPT and PT
-numPoints=[20,250] # number of points that we are going to receive to make a prediction about f given x and y, if you don't know then use the maximum
-numVars=9 # the dimenstion of input points x, if you don't know then use the maximum
+numPoints=[30,31] # number of points that we are going to receive to make a prediction about f given x and y, if you don't know then use the maximum
+numVars=1 # the dimenstion of input points x, if you don't know then use the maximum
 numYs=1 # the dimension of output points y = f(x), if you don't know then use the maximum
 blockSize = 200 # spatial extent of the model for its context
 testBlockSize = 400
@@ -54,9 +54,9 @@ dataDir = './datasets/'
 dataInfo = 'XYE_{}Var_{}Points_{}EmbeddingSize'.format(numVars, numPoints, embeddingSize)
 titleTemplate = "{} equations of {} variables - Benchmark"
 target = 'Skeleton' #'Skeleton' #'EQ'
-dataFolder = '1-9Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_20-250'
+dataFolder = '1Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_30Points'
 addr = './SavedModels/' # where to save model
-method = 'EMB_SUM' # EMB_CAT/EMB_SUM/OUT_SUM/OUT_CAT/EMB_CON -> whether to concat the embedding or use summation.
+method = 'EMB_SUM' # EMB_CAT/EMB_SUM/OUT_SUM/OUT_CAT/EMB_CON -> whether to concat the embedding or use summation. 
 variableEmbedding = 'NOT_VAR' # NOT_VAR/LEA_EMB/STR_VAR
 # NOT_VAR: Do nothing, will not pass any information from the number of variables in the equation to the GPT
 # LEA_EMB: Learnable embedding for the variables, added to the pointNET embedding
@@ -121,6 +121,7 @@ outputs = ''.join([train_dataset.itos[int(i)] for i in outputs])
 print('id:{}\ninputs:{}\noutputs:{}\npoints:{}\nvariables:{}'.format(idx,inputs,outputs,points, variables))
 
 # load the test data
+dataTestFolder = '1Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_30Points/Test'
 path = f'{dataDir}/{dataTestFolder}/*.json'
 print(f'test path is {path}')
 files = glob.glob(path)
