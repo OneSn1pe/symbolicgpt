@@ -121,7 +121,7 @@ outputs = ''.join([train_dataset.itos[int(i)] for i in outputs])
 print('id:{}\ninputs:{}\noutputs:{}\npoints:{}\nvariables:{}'.format(idx,inputs,outputs,points, variables))
 
 # load the test data
-dataTestFolder = '1Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_30Points/Test'
+
 path = f'{dataDir}/{dataTestFolder}/*.json'
 print(f'test path is {path}')
 files = glob.glob(path)
