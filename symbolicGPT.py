@@ -38,30 +38,25 @@ set_seed(42)
 # config
 device='gpu'
 scratch=True # if you want to ignore the cache and start for scratch
-numEpochs = 40 # number of epochs to train the GPT+PT model
+numEpochs = 20 # number of epochs to train the GPT+PT model
 embeddingSize = 512 # the hidden dimension of the representation of both GPT and PT
-numPoints = [20,250] # number of points that we are going to receive to make a prediction about f given x and y, if you don't know then use the maximum
-numVars = 9 # the dimenstion of input points x, if you don't know then use the maximum
-numYs = 1 # the dimension of output points y = f(x), if you don't know then use the maximum
-blockSize = 32 # spatial extent of the model for its context
-testBlockSize = 800
+numPoints=[500,501] # number of points that we are going to receive to make a prediction about f given x and y, if you don't know then use the maximum
+numVars=3 # the dimenstion of input points x, if you don't know then use the maximum
+numYs=1 # the dimension of output points y = f(x), if you don't know then use the maximum
+blockSize = 200 # spatial extent of the model for its context
+testBlockSize = 400
 batchSize = 128 # batch size of training data
 target = 'Skeleton' #'Skeleton' #'EQ'
 const_range = [-2.1, 2.1] # constant range to generate during training only if target is Skeleton
 decimals = 8 # decimals of the points only if target is Skeleton
 trainRange = [-3.0,3.0] # support range to generate during training only if target is Skeleton
-dataDir = 'D:/Datasets/Symbolic Dataset/Datasets/FirstDataGenerator/'  #'./datasets/'
-dataFolder = '1-9Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_20-250'
-dataTestFolder = '1-9Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_20-250/Test_Benchmarks'
-dataInfo = 'XYE_{}Var_{}-{}Points_{}EmbeddingSize'.format(numVars, numPoints[0], numPoints[1], embeddingSize)
+dataDir = './datasets/'
+dataInfo = 'XYE_{}Var_{}Points_{}EmbeddingSize'.format(numVars, numPoints, embeddingSize)
 titleTemplate = "{} equations of {} variables - Benchmark"
+target = 'Skeleton' #'Skeleton' #'EQ'
+dataFolder = '3Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_500Points'
 addr = './SavedModels/' # where to save model
-method = 'EMB_SUM' # EMB_CAT/EMB_SUM/OUT_SUM/OUT_CAT/EMB_CON -> whether to concat the embedding or use summation. 
-# EMB_CAT: Concat point embedding to GPT token+pos embedding
-# EMB_SUM: Add point embedding to GPT tokens+pos embedding
-# OUT_CAT: Concat the output of the self-attention and point embedding
-# OUT_SUM: Add the output of the self-attention and point embedding
-# EMB_CON: Conditional Embedding, add the point embedding as the first token
+method = 'EMB_SUM' # EMB_CAT/EMB_SUM/OUT_SUM/OUT_CAT/EMB_CON -> whether to concat the embedding or use summation.
 variableEmbedding = 'NOT_VAR' # NOT_VAR/LEA_EMB/STR_VAR
 # NOT_VAR: Do nothing, will not pass any information from the number of variables in the equation to the GPT
 # LEA_EMB: Learnable embedding for the variables, added to the pointNET embedding
