@@ -201,7 +201,7 @@ jupyter_core==4.6.1=py37_0
 jupyterlab==1.2.6=pyhf63ae98_0
 jupyterlab-pygments==0.1.2=pypi_0
 jupyterlab_server==1.0.6=py_0
-jupyterlab_widget=s=1.0.0=pyhd3eb1b0_1
+jupyterlab_widgets==1.0.0=pyhd3eb1b0_1
 keras==2.4.3=pypi_0
 keras-applications==1.0.8=pypi_0
 keras-nightly==2.5.0.dev2021032900=pypi_0
