@@ -144,6 +144,7 @@ def processData(numSamples, nv, decimals,
 
 def main():
     # Config
+   # Config
     seed = 2021 # 2021 Train, 2022 Val, 2023 Test, you have to change the generateData.py seed as well
     #from GenerateData import seed
     import random
@@ -151,9 +152,9 @@ def main():
     np.random.seed(seed=seed) # fix the seed for reproducibility
 
     #NOTE: For linux you can only use unique numVars, in Windows, it is possible to use [1,2,3,4] * 10!
-    numVars = list(range(1,10)) #[1,2,3,4,5]
-    decimals = 4
-    numberofPoints = [20,250] # only usable if support points has not been provided
+    numVars = [1] #list(range(31)) #[1,2,3,4,5]
+    decimals = 8
+    numberofPoints = [30,31] # only usable if support points has not been provided
     numSamples = 10000 # number of generated samples
     folder = './Dataset'
     dataPath = folder +'/{}_{}_{}.json'
@@ -179,17 +180,15 @@ def main():
     const_ratio = 0.5
     op_list=[
                 "id", "add", "mul",
-                "sin", "pow", "cos", "sqrt",
-                "exp", "div", "sub", "log",
-                "arcsin",
+                "sin", "pow", "cos", 
+                "exp", "div", "sub", "log"
             ]
     exponents=[3, 4, 5, 6]
 
     sortY = False # if the data is sorted based on y
-    numSamplesEachEq = 5
+    numSamplesEachEq = 50
     threshold = 5000
-    templateProb = 0.1 # the probability of generating an equation from the templates
-    templatesEQs = None # template equations, if NONE then there will be no specific templates for the generated equations
+    templatesEQs = None
     templatesEQs = {
         1: [
             # NGUYEN
