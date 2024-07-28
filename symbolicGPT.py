@@ -75,7 +75,7 @@ except:
     print('Folder already exists!')
 
 # load the train dataset
-train_file = '/Users/kaustubhkislay/Downloads/SymbolicGPT/Datasets/1Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_30Points/Train/0_1_0_14062021_193012.json'
+train_file = ‘train_dataset_{}.pb'.format(fName)
 if os.path.isfile(train_file) and not scratch:
     # just load the train set
     with open(train_file, 'rb') as f:
