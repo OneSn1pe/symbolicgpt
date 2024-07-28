@@ -82,7 +82,7 @@ if os.path.isfile(train_file) and not scratch:
         train_dataset,trainText,chars = pickle.load(f)
 else:
     # process training files from scratch
-    path = '{}/{}/Train/*.json'.format(dataDir, dataFolder)    
+    path = '/Users/kaustubhkislay/Downloads/SymbolicGPT/Datasets/1-9Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_20-250/Train/*'   
     files = glob.glob(path)[:maxNumFiles]
     text = processDataFiles(files)
     chars = sorted(list(set(text))+['_','T','<','>',':']) # extract unique characters from the text before converting the text to a list, # T is for the test data
