@@ -96,7 +96,7 @@ else:
     #     pickle.dump([train_dataset,trainText,chars], f)
 
 # print a random sample
-idx = np.random.randint(len(train_dataset))
+idx = np.random.randint(train_dataset.__len__())
 inputs, outputs, points, variables = train_dataset.__getitem__(idx)
 print('inputs:{}'.format(inputs))
 inputs = ''.join([train_dataset.itos[int(i)] for i in inputs])
