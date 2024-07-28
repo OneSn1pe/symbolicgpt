@@ -75,7 +75,7 @@ except:
     print('Folder already exists!')
 
 # load the train dataset
-train_file = ‘train_dataset_{}.pb'.format(fName)
+train_file = 'train_dataset_{}.pb'.format(fName)
 if os.path.isfile(train_file) and not scratch:
     # just load the train set
     with open(train_file, 'rb') as f:
