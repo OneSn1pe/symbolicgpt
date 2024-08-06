@@ -398,9 +398,7 @@ class CharDataset(Dataset):
     def __getitem__(self, idx):
         # grab an example from the data
         chunk = self.data[idx] # sequence of tokens including x, y, eq, etc.
-        if self.augment:
-            chunk['X'] = self.augment_points(chunk['X'])
-            chunk['Y'] = self.augment_points(chunk['Y'])
+        
         try:
             chunk = json.loads(chunk) # convert the sequence tokens to a dictionary
         except Exception as e:
@@ -528,7 +526,9 @@ class CharDataset(Dataset):
         # if printInfoCondition:
         #     print(f'Points: {points}')
         #points += torch.normal(0, 0.05, size=points.shape) # add a guassian noise
-        
+        if self.augment:
+            print("Augmented X:", chunk['X'])
+            print("Augmented Y:", chunk['Y'])
         inputs = torch.tensor(inputs, dtype=torch.long)
         outputs = torch.tensor(outputs, dtype=torch.long)
         numVars = torch.tensor(numVars, dtype=torch.long)
