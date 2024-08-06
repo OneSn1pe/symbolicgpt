@@ -296,7 +296,7 @@ try:
                 Yhats.append(Yhat)
             err = relativeErr(Ys,Yhats, info=True)
 
-            if type(err) is np.complex128 or np.complex:
+            if type(err) is complex128 or complex:
                 err = abs(err.real)
 
             resultDict[fName]['SymbolicGPT'].append(err)
