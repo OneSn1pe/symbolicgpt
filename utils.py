@@ -601,3 +601,7 @@ def generateDataStrEq(eq, n_points=2, n_vars=3,
         X.append(x)
         Y.append(y)
     return X, Y
+                          
+def augment_points(self, points):
+        noise = np.random.normal(0, self.augmentation_level, size=np.array(points).shape)
+        return np.array(points) + noise
