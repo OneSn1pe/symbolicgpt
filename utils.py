@@ -361,7 +361,7 @@ class CharDataset(Dataset):
     def __init__(self, data, block_size, chars, 
                  numVars, numYs, numPoints, target='EQ', 
                  addVars=False, const_range=[-0.4, 0.4],
-                 xRange=[-3.0,3.0], decimals=4, augment=False, augmentation_level=0.1):
+                 xRange=[-3.0,3.0], decimals=4, augment=False):
 
         data_size, vocab_size = len(data), len(chars)
         print('data has %d examples, %d unique.' % (data_size, vocab_size))
@@ -390,7 +390,6 @@ class CharDataset(Dataset):
         self.xRange = xRange
         self.decimals = decimals
         self.augment = augment
-        self.augmentation_level = augmentation_level
     
     def __len__(self):
         return len(self.data)-1
@@ -526,9 +525,7 @@ class CharDataset(Dataset):
         # if printInfoCondition:
         #     print(f'Points: {points}')
         #points += torch.normal(0, 0.05, size=points.shape) # add a guassian noise
-        if self.augment:
-            print("Augmented X:", chunk['X'])
-            print("Augmented Y:", chunk['Y'])
+        
         inputs = torch.tensor(inputs, dtype=torch.long)
         outputs = torch.tensor(outputs, dtype=torch.long)
         numVars = torch.tensor(numVars, dtype=torch.long)
@@ -601,7 +598,3 @@ def generateDataStrEq(eq, n_points=2, n_vars=3,
         X.append(x)
         Y.append(y)
     return X, Y
-                          
-def augment_points(self, points):
-        noise = np.random.normal(0, self.augmentation_level, size=np.array(points).shape)
-        return np.array(points) + noise
