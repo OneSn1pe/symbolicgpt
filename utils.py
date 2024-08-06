@@ -398,7 +398,9 @@ class CharDataset(Dataset):
     def __getitem__(self, idx):
         # grab an example from the data
         chunk = self.data[idx] # sequence of tokens including x, y, eq, etc.
-        
+        if self.augment:
+            chunk['X'] = self.augment_points(chunk['X'])
+            chunk['Y'] = self.augment_points(chunk['Y'])
         try:
             chunk = json.loads(chunk) # convert the sequence tokens to a dictionary
         except Exception as e:
