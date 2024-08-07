@@ -361,7 +361,7 @@ class CharDataset(Dataset):
     def __init__(self, data, block_size, chars, 
                  numVars, numYs, numPoints, target='EQ', 
                  addVars=False, const_range=[-0.4, 0.4],
-                 xRange=[-3.0,3.0], decimals=4, augment=True):
+                 xRange=[-3.0,3.0], decimals=4, augment=False):
 
         data_size, vocab_size = len(data), len(chars)
         print('data has %d examples, %d unique.' % (data_size, vocab_size))
