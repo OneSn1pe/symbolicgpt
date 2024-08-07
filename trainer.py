@@ -54,82 +54,75 @@ class Trainer:
         
         self.best_loss = best
 
-    def cross_validate(self):
-        kf = KFold(n_splits=self.n_splits, shuffle=True, random_state=42)
-        fold_results = []
+    def cross_validate(self, num_folds=5):
+        folds = create_k_folds(self.train_dataset.data, num_folds=num_folds)
+        best_fold_loss = float('inf')
+        best_fold_model = None
 
-        for fold, (train_idx, val_idx) in enumerate(kf.split(self.train_dataset)):
-            print(f'Fold {fold + 1}/{self.n_splits}')
-            train_subset = Subset(self.train_dataset, train_idx)
-            val_subset = Subset(self.train_dataset, val_idx)
+        for fold_idx, (train_indices, val_indices) in enumerate(folds):
+            print(f"Starting fold {fold_idx + 1}/{num_folds}")
+
+            # Create data loaders for the current fold
+            train_subset = torch.utils.data.Subset(self.train_dataset, train_indices)
+            val_subset = torch.utils.data.Subset(self.train_dataset, val_indices)
+
+            train_loader = DataLoader(train_subset, shuffle=True, pin_memory=True,
+                                      batch_size=self.config.batch_size,
+                                      num_workers=self.config.num_workers)
+            val_loader = DataLoader(val_subset, shuffle=False, pin_memory=True,
+                                    batch_size=self.config.batch_size,
+                                    num_workers=self.config.num_workers)
+
+            # Reset the model
+            self.model.apply(self.model._init_weights)
+
+            # Initialize optimizer
+            optimizer = self.model.configure_optimizers(self.config)
+
+            # Run training and validation for the current fold
+            fold_loss = self.run_fold(train_loader, val_loader, optimizer)
             
-            self.train(train_subset, val_subset)
+            if fold_loss < best_fold_loss:
+                best_fold_loss = fold_loss
+                best_fold_model = self.model.state_dict()
 
-            # Store the results
-            fold_results.append(self.best_loss)
-        
-        avg_loss = np.mean(fold_results)
-        print(f'Average validation loss across {self.n_splits} folds: {avg_loss:.4f}')
-        return avg_loss
+        # Load the best model from cross-validation
+        self.model.load_state_dict(best_fold_model)
+        print(f"Best fold validation loss: {best_fold_loss}")
 
-    def train(self, train_data, val_data):
-        model, config = self.model, self.config
-        raw_model = model.module if hasattr(self.model, "module") else model
-        optimizer = raw_model.configure_optimizers(config)
-
-        def run_epoch(data, split):
-            is_train = split == 'train'
-            model.train(is_train)
-            loader = DataLoader(data, shuffle=is_train, pin_memory=True,
-                                batch_size=config.batch_size, num_workers=config.num_workers)
+    def run_fold(self, train_loader, val_loader, optimizer):
+        # Train and validate for one fold
+        best_val_loss = float('inf')
+        for epoch in range(self.config.max_epochs):
+            self.run_epoch(train_loader, optimizer, is_train=True)
+            val_loss = self.run_epoch(val_loader, optimizer, is_train=False)
             
-            losses = []
-            pbar = tqdm(enumerate(loader), total=len(loader)) if is_train else enumerate(loader)
-            for it, (x, y, p, v) in pbar:
-                x, y, p, v = x.to(self.device), y.to(self.device), p.to(self.device), v.to(self.device)
-                
-                with torch.set_grad_enabled(is_train):
-                    logits, loss = model(x, y, p, v, tokenizer=self.train_dataset.itos)
-                    loss = loss.mean()
-                    losses.append(loss.item())
-                
-                if is_train:
-                    model.zero_grad()
-                    loss.backward()
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_norm_clip)
-                    optimizer.step()
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
 
-                    if config.lr_decay:
-                        self.tokens += (y >= 0).sum()
-                        if self.tokens < config.warmup_tokens:
-                            lr_mult = float(self.tokens) / float(max(1, config.warmup_tokens))
-                        else:
-                            progress = float(self.tokens - config.warmup_tokens) / float(max(1, config.final_tokens - config.warmup_tokens))
-                            lr_mult = max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
-                        lr = config.learning_rate * lr_mult
-                        for param_group in optimizer.param_groups:
-                            param_group['lr'] = lr
-                    else:
-                        lr = config.learning_rate
+        return best_val_loss
 
-                    pbar.set_description(f"epoch {epoch+1} iter {it}: train loss {loss.item():.5f}. lr {lr:e}")
-            
-            if not is_train:
-                test_loss = float(np.mean(losses))
-                logger.info("test loss: %f", test_loss)
-                return test_loss
+    def run_epoch(self, loader, optimizer, is_train=True):
+        model = self.model
+        model.train(is_train)
+        losses = []
+        pbar = tqdm(enumerate(loader), total=len(loader))
+        for it, (x, y, p, v) in pbar:
+            x, y, p, v = x.to(self.device), y.to(self.device), p.to(self.device), v.to(self.device)
+            with torch.set_grad_enabled(is_train):
+                logits, loss = model(x, y, p, v, tokenizer=self.train_dataset.itos)
+                loss = loss.mean()
+                losses.append(loss.item())
 
-        self.best_loss = float('inf') if self.best_loss is None else self.best_loss
-        self.tokens = 0
+            if is_train:
+                model.zero_grad()
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), self.config.grad_norm_clip)
+                optimizer.step()
 
-        for epoch in range(config.max_epochs):
-            run_epoch(train_data, 'train')
-            test_loss = run_epoch(val_data, 'val')
-            
-            if test_loss < self.best_loss:
-                self.best_loss = test_loss
-                if self.config.ckpt_path is not None:
-                    self.save_checkpoint()
+            pbar.set_description(f"{'train' if is_train else 'val'} loss {loss.item():.5f}")
+
+        return float(np.mean(losses))
 
     def save_checkpoint(self):
         raw_model = self.model.module if hasattr(self.model, "module") else self.model
