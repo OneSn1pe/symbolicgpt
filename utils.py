@@ -20,6 +20,9 @@ def set_seed(seed):
     torch.cuda.manual_seed_all(seed)
 
 
+from sklearn.model_selection import KFold
+import numpy as np
+
 def create_k_folds(data, num_folds=5, seed=42):
     """
     Splits the data into K folds for cross-validation.
@@ -36,6 +39,7 @@ def create_k_folds(data, num_folds=5, seed=42):
     indices = np.arange(len(data))
     folds = list(kf.split(indices))
     return folds
+
 
 def top_k_logits(logits, k):
     v, ix = torch.topk(logits, k)
