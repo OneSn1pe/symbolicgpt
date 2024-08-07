@@ -10,12 +10,32 @@ from torch.utils.data import Dataset
 from torch.nn import functional as F
 from numpy import * # to override the math functions
 from matplotlib import pyplot as plt
+from sklearn.model_selection import KFold
+import numpy as np
 
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
+
+def create_k_folds(data, num_folds=5, seed=42):
+    """
+    Splits the data into K folds for cross-validation.
+
+    Parameters:
+    - data: List of data points (each a JSON object or similar).
+    - num_folds: Number of folds.
+    - seed: Random seed for reproducibility.
+
+    Returns:
+    - A list of tuples, each containing (train_indices, val_indices) for a fold.
+    """
+    kf = KFold(n_splits=num_folds, shuffle=True, random_state=seed)
+    indices = np.arange(len(data))
+    folds = list(kf.split(indices))
+    return folds
 
 def top_k_logits(logits, k):
     v, ix = torch.topk(logits, k)
