@@ -13,24 +13,20 @@ logging.basicConfig(
 import os
 import glob
 import json
-import math
 import pickle
 import random
 import numpy as np
-#from tqdm import tqdm
-from numpy import * # to override the math functions
 
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-#from torch.utils.data import Dataset
 
-from utils import set_seed, sample_from_model
+from utils import set_seed, sample_from_model, create_k_folds
 from matplotlib import pyplot as plt
 from trainer import Trainer, TrainerConfig
 from models import GPT, GPTConfig, PointNetConfig
-from scipy.optimize import minimize, least_squares
-from utils import processDataFiles, CharDataset, relativeErr, mse, sqrt, divide, lossFunc
+from scipy.optimize import minimize
+from utils import processDataFiles, CharDataset, relativeErr
 
 # set the random seed
 set_seed(42)
@@ -41,7 +37,7 @@ scratch=True # if you want to ignore the cache and start for scratch
 numEpochs = 20 # number of epochs to train the GPT+PT model
 embeddingSize = 512 # the hidden dimension of the representation of both GPT and PT
 numPoints=[30,31] # number of points that we are going to receive to make a prediction about f given x and y, if you don't know then use the maximum
-numVars=1 # the dimenstion of input points x, if you don't know then use the maximum
+numVars=1 # the dimension of input points x, if you don't know then use the maximum
 numYs=1 # the dimension of output points y = f(x), if you don't know then use the maximum
 blockSize = 200 # spatial extent of the model for its context
 testBlockSize = 400
@@ -63,7 +59,7 @@ variableEmbedding = 'NOT_VAR' # NOT_VAR/LEA_EMB/STR_VAR
 # LEA_EMB: Learnable embedding for the variables, added to the pointNET embedding
 # STR_VAR: Add the number of variables to the first token
 addVars = True if variableEmbedding == 'STR_VAR' else False
-maxNumFiles = 100 # maximum number of file to load in memory for training the neural network
+maxNumFiles = 100 # maximum number of files to load in memory for training the neural network
 bestLoss = None # if there is any model to load as pre-trained one
 fName = '{}_SymbolicGPT_{}_{}_{}_MINIMIZE.txt'.format(dataInfo, 
                                              'GPT_PT_{}_{}'.format(method, target), 
@@ -80,66 +76,21 @@ train_file = 'train_dataset_{}.pb'.format(fName)
 if os.path.isfile(train_file) and not scratch:
     # just load the train set
     with open(train_file, 'rb') as f:
-        train_dataset,trainText,chars = pickle.load(f)
+        train_dataset, trainText, chars = pickle.load(f)
 else:
     # process training files from scratch
     path = '{}/{}/Train/*.json'.format(dataDir, dataFolder)    
     files = glob.glob(path)[:maxNumFiles]
     text = processDataFiles(files)
-    chars = sorted(list(set(text))+['_','T','<','>',':']) # extract unique characters from the text before converting the text to a list, # T is for the test data
+    chars = sorted(list(set(text)) + ['_', 'T', '<', '>', ':']) # extract unique characters from the text before converting the text to a list, # T is for the test data
     text = text.split('\n') # convert the raw text to a set of examples
     trainText = text[:-1] if len(text[-1]) == 0 else text
-    random.shuffle(trainText) # shuffle the dataset, it's important specailly for the combined number of variables experiment
-    train_dataset = CharDataset(text, blockSize, chars, numVars=numVars, 
-                    numYs=numYs, numPoints=numPoints, target=target, addVars=addVars,
-                    const_range=const_range, xRange=trainRange, decimals=decimals, augment=False) 
+    random.shuffle(trainText) # shuffle the dataset, it's important especially for the combined number of variables experiment
+    train_dataset = CharDataset(trainText, blockSize, chars, numVars=numVars, 
+                                numYs=numYs, numPoints=numPoints, target=target, addVars=addVars,
+                                const_range=const_range, xRange=trainRange, decimals=decimals, augment=False)
     # with open(train_file, 'wb') as f:
     #     pickle.dump([train_dataset,trainText,chars], f)
-
-# print a random sample
-idx = np.random.randint(train_dataset.__len__())
-inputs, outputs, points, variables = train_dataset.__getitem__(idx)
-print('inputs:{}'.format(inputs))
-inputs = ''.join([train_dataset.itos[int(i)] for i in inputs])
-outputs = ''.join([train_dataset.itos[int(i)] for i in outputs])
-print('id:{}\ninputs:{}\noutputs:{}\npoints:{}\nvariables:{}'.format(idx,inputs,outputs,points, variables))
-
-# load the val dataset
-path = '{}/{}/Val/*.json'.format(dataDir,dataFolder)
-files = glob.glob(path)
-textVal = processDataFiles([files[0]])
-textVal = textVal.split('\n') # convert the raw text to a set of examples
-val_dataset = CharDataset(textVal, blockSize, chars, numVars=numVars, 
-                numYs=numYs, numPoints=numPoints, target=target, addVars=addVars,
-                const_range=const_range, xRange=trainRange, decimals=decimals)
-
-# print a random sample
-idx = np.random.randint(val_dataset.__len__())
-inputs, outputs, points, variables = val_dataset.__getitem__(idx)
-print(points.min(), points.max())
-inputs = ''.join([train_dataset.itos[int(i)] for i in inputs])
-outputs = ''.join([train_dataset.itos[int(i)] for i in outputs])
-print('id:{}\ninputs:{}\noutputs:{}\npoints:{}\nvariables:{}'.format(idx,inputs,outputs,points, variables))
-
-# load the test data
-
-path = f'{dataDir}/{dataTestFolder}/*.json'
-print(f'test path is {path}')
-files = glob.glob(path)
-textTest = processDataFiles(files)
-textTest = textTest.split('\n') # convert the raw text to a set of examples
-# test_dataset_target = CharDataset(textTest, blockSize, chars, target=target)
-test_dataset = CharDataset(textTest, testBlockSize, chars, numVars=numVars, 
-                numYs=numYs, numPoints=numPoints, addVars=addVars,
-                const_range=const_range, xRange=trainRange, decimals=decimals)
-
-# print a random sample
-idx = np.random.randint(test_dataset.__len__())
-inputs, outputs, points, variables = test_dataset.__getitem__(idx)
-print(points.min(), points.max())
-inputs = ''.join([train_dataset.itos[int(i)] for i in inputs])
-outputs = ''.join([train_dataset.itos[int(i)] for i in outputs])
-print('id:{}\ninputs:{}\noutputs:{}\npoints:{}\nvariables:{}'.format(idx,inputs,outputs,points, variables))
 
 # create the model
 pconf = PointNetConfig(embeddingSize=embeddingSize, 
@@ -152,22 +103,18 @@ mconf = GPTConfig(train_dataset.vocab_size, train_dataset.block_size,
                   n_layer=8, n_head=8, n_embd=embeddingSize, 
                   padding_idx=train_dataset.paddingID)
 model = GPT(mconf, pconf)
-    
-# initialize a trainer instance and kick off training
+
+# initialize a trainer instance and kick off training with cross-validation
 tconf = TrainerConfig(max_epochs=numEpochs, batch_size=batchSize, 
                       learning_rate=6e-4,
                       lr_decay=True, warmup_tokens=512*20, 
                       final_tokens=2*len(train_dataset)*blockSize,
                       num_workers=0, ckpt_path=ckptPath)
-trainer = Trainer(model, train_dataset, val_dataset, tconf, bestLoss, device=device)
-
-# # load the best model before training
-# print('The following model {} has been loaded!'.format(ckptPath))
-# model.load_state_dict(torch.load(ckptPath))
-# model = model.eval().to(trainer.device)
+trainer = Trainer(model, train_dataset, None, tconf, bestLoss, device=device)
 
 try:
-    trainer.train()
+    # Perform cross-validation
+    trainer.cross_validate(num_folds=5)  # Adjust the number of folds as needed
 except KeyboardInterrupt:
     print('KeyboardInterrupt')
 
@@ -176,7 +123,7 @@ print('The following model {} has been loaded!'.format(ckptPath))
 model.load_state_dict(torch.load(ckptPath))
 model = model.eval().to(trainer.device)
 
-## Test the model
+# Test the model
 # alright, let's sample some character-level symbolic GPT 
 loader = torch.utils.data.DataLoader(
                                 test_dataset, 
