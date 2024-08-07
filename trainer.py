@@ -13,6 +13,8 @@ import torch
 import torch.optim as optim
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data.dataloader import DataLoader
+from sklearn.model_selection import KFold
+from torch.utils.data import Subset
 
 logger = logging.getLogger(__name__)
 
@@ -37,73 +39,71 @@ class TrainerConfig:
             setattr(self, k, v)
 
 class Trainer:
-
-    def __init__(self, model, train_dataset, test_dataset, config, best=None, device='gpu'):
+    def __init__(self, model, train_dataset, test_dataset, config, best=None, device='gpu', n_splits=5):
         self.model = model
         self.train_dataset = train_dataset
         self.test_dataset = test_dataset
         self.config = config
-
-        # take over whatever gpus are on the system
         self.device = 'cpu'
+        self.n_splits = n_splits
+        
         if device == 'gpu' and torch.cuda.is_available():
             self.device = torch.cuda.current_device()
             self.model = torch.nn.DataParallel(self.model).to(self.device)
             print('We are using the gpu now! device={}'.format(self.device))
-
+        
         self.best_loss = best
 
-    def save_checkpoint(self):
-        # DataParallel wrappers keep raw model object in .module attribute
-        raw_model = self.model.module if hasattr(self.model, "module") else self.model
-        logger.info("saving %s", self.config.ckpt_path)
-        torch.save(raw_model.state_dict(), self.config.ckpt_path)
+    def cross_validate(self):
+        kf = KFold(n_splits=self.n_splits, shuffle=True, random_state=42)
+        fold_results = []
 
-    def train(self):
+        for fold, (train_idx, val_idx) in enumerate(kf.split(self.train_dataset)):
+            print(f'Fold {fold + 1}/{self.n_splits}')
+            train_subset = Subset(self.train_dataset, train_idx)
+            val_subset = Subset(self.train_dataset, val_idx)
+            
+            self.train(train_subset, val_subset)
+
+            # Store the results
+            fold_results.append(self.best_loss)
+        
+        avg_loss = np.mean(fold_results)
+        print(f'Average validation loss across {self.n_splits} folds: {avg_loss:.4f}')
+        return avg_loss
+
+    def train(self, train_data, val_data):
         model, config = self.model, self.config
         raw_model = model.module if hasattr(self.model, "module") else model
         optimizer = raw_model.configure_optimizers(config)
 
-        def run_epoch(split):
+        def run_epoch(data, split):
             is_train = split == 'train'
             model.train(is_train)
-            data = self.train_dataset if is_train else self.test_dataset
-            loader = DataLoader(data, shuffle=True, pin_memory=True,
-                                batch_size=config.batch_size,
-                                num_workers=config.num_workers)
-
+            loader = DataLoader(data, shuffle=is_train, pin_memory=True,
+                                batch_size=config.batch_size, num_workers=config.num_workers)
+            
             losses = []
             pbar = tqdm(enumerate(loader), total=len(loader)) if is_train else enumerate(loader)
             for it, (x, y, p, v) in pbar:
-
-                # place data on the correct device
-                x = x.to(self.device) # input equation
-                y = y.to(self.device) # output equation
-                p = p.to(self.device) # points
-                v = v.to(self.device) # number of variables
-
-                # forward the model
+                x, y, p, v = x.to(self.device), y.to(self.device), p.to(self.device), v.to(self.device)
+                
                 with torch.set_grad_enabled(is_train):
                     logits, loss = model(x, y, p, v, tokenizer=self.train_dataset.itos)
-                    loss = loss.mean() # collapse all losses if they are scattered on multiple gpus
+                    loss = loss.mean()
                     losses.append(loss.item())
-
+                
                 if is_train:
-
-                    # backprop and update the parameters
                     model.zero_grad()
                     loss.backward()
                     torch.nn.utils.clip_grad_norm_(model.parameters(), config.grad_norm_clip)
                     optimizer.step()
 
-                    # decay the learning rate based on our progress
                     if config.lr_decay:
-                        self.tokens += (y >= 0).sum() # number of tokens processed this step (i.e. label is not -100)
+                        self.tokens += (y >= 0).sum()
                         if self.tokens < config.warmup_tokens:
-                            # linear warmup
                             lr_mult = float(self.tokens) / float(max(1, config.warmup_tokens))
                         else:
-                            # cosine learning rate decay
                             progress = float(self.tokens - config.warmup_tokens) / float(max(1, config.final_tokens - config.warmup_tokens))
                             lr_mult = max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
                         lr = config.learning_rate * lr_mult
@@ -112,24 +112,28 @@ class Trainer:
                     else:
                         lr = config.learning_rate
 
-                    # report progress
                     pbar.set_description(f"epoch {epoch+1} iter {it}: train loss {loss.item():.5f}. lr {lr:e}")
-
+            
             if not is_train:
                 test_loss = float(np.mean(losses))
                 logger.info("test loss: %f", test_loss)
                 return test_loss
 
         self.best_loss = float('inf') if self.best_loss is None else self.best_loss
-        self.tokens = 0 # counter used for learning rate decay
+        self.tokens = 0
+
         for epoch in range(config.max_epochs):
-
-            run_epoch('train')
-            if self.test_dataset is not None:
-                test_loss = run_epoch('test')
-
-            # supports early stopping based on the test loss, or just save always if no test set is provided
-            good_model = self.test_dataset is None or test_loss < self.best_loss
-            if self.config.ckpt_path is not None and good_model:
+            run_epoch(train_data, 'train')
+            test_loss = run_epoch(val_data, 'val')
+            
+            if test_loss < self.best_loss:
                 self.best_loss = test_loss
-                self.save_checkpoint()
+                if self.config.ckpt_path is not None:
+                    self.save_checkpoint()
+
+    def save_checkpoint(self):
+        raw_model = self.model.module if hasattr(self.model, "module") else self.model
+        logger.info("saving %s", self.config.ckpt_path)
+        torch.save(raw_model.state_dict(), self.config.ckpt_path)
+
+
