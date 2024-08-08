@@ -21,12 +21,11 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from utils import set_seed, sample_from_model, create_k_folds
+from utils import set_seed, sample_from_model, create_k_folds, processDataFiles, CharDataset, relativeErr
 from matplotlib import pyplot as plt
 from trainer import Trainer, TrainerConfig
 from models import GPT, GPTConfig, PointNetConfig
 from scipy.optimize import minimize
-from utils import processDataFiles, CharDataset, relativeErr
 
 # set the random seed
 set_seed(42)
