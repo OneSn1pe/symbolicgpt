@@ -26,7 +26,6 @@ from matplotlib import pyplot as plt
 from trainer import Trainer, TrainerConfig
 from models import GPT, GPTConfig, PointNetConfig
 from scipy.optimize import minimize
-from utils import create_k_folds
 
 # set the random seed
 set_seed(42)
