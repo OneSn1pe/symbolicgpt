@@ -5,6 +5,7 @@ so nothing in this file really has anything to do with GPT specifically.
 
 import math
 import logging
+import utils
 
 from tqdm import tqdm
 import numpy as np
