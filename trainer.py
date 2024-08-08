@@ -15,6 +15,7 @@ from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data.dataloader import DataLoader
 from sklearn.model_selection import KFold
 from torch.utils.data import Subset
+from utils import create_k_folds
 
 logger = logging.getLogger(__name__)
 
