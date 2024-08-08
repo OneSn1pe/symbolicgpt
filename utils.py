@@ -22,17 +22,6 @@ def set_seed(seed):
 
 
 def create_k_folds(data, num_folds=5, seed=42):
-    """
-    Splits the data into K folds for cross-validation.
-
-    Parameters:
-    - data: List of data points (each a JSON object or similar).
-    - num_folds: Number of folds.
-    - seed: Random seed for reproducibility.
-
-    Returns:
-    - A list of tuples, each containing (train_indices, val_indices) for a fold.
-    """
     kf = KFold(n_splits=num_folds, shuffle=True, random_state=seed)
     indices = np.arange(len(data))
     folds = list(kf.split(indices))
