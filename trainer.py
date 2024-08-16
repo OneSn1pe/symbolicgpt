@@ -76,7 +76,7 @@ class Trainer:
                                     num_workers=self.config.num_workers)
 
             # Reset the model
-            self.model.module.apply(self.model.module._init_weights)
+            self.model.apply(self.model._init_weights)
 
             # Initialize optimizer
             optimizer = self.model.configure_optimizers(self.config)
