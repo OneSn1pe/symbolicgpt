@@ -15,8 +15,9 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data.dataloader import DataLoader
 from sklearn.model_selection import KFold
-from torch.utils.data import Subset
+from torch.utils.data import Subset, RandomSampler
 from utils import create_k_folds
+
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,16 @@ class TrainerConfig:
     def __init__(self, **kwargs):
         for k,v in kwargs.items():
             setattr(self, k, v)
+            
+class CPUSampler(RandomSampler):
+    def __init__(self, data_source):
+        self.data_source = data_source
+
+    def __iter__(self):
+        return (i for i in torch.randperm(len(self.data_source), generator=torch.Generator()).tolist())
+
+    def __len__(self):
+        return len(self.data_source)
 
 class Trainer:
     def __init__(self, model, train_dataset, test_dataset, config, best=None, device='gpu', n_splits=5):
@@ -46,7 +57,7 @@ class Trainer:
         self.train_dataset = train_dataset
         self.test_dataset = test_dataset
         self.config = config
-        self.device = 'cpu'
+        self.device = device 
         self.n_splits = n_splits
         
         if device == 'gpu' and torch.cuda.is_available():
@@ -64,22 +75,24 @@ class Trainer:
         for fold_idx, (train_indices, val_indices) in enumerate(folds):
             print(f"Starting fold {fold_idx + 1}/{num_folds}")
 
-            # Create data loaders for the current fold
+            # Create data loaders for the current fold           
             train_subset = torch.utils.data.Subset(self.train_dataset, train_indices)
             val_subset = torch.utils.data.Subset(self.train_dataset, val_indices)
 
-            train_loader = DataLoader(train_subset, shuffle=True, pin_memory=True,
+            train_loader = DataLoader(train_subset, pin_memory=True,
+                                      sampler=CPUSampler(train_subset),
                                       batch_size=self.config.batch_size,
                                       num_workers=self.config.num_workers)
-            val_loader = DataLoader(val_subset, shuffle=False, pin_memory=True,
+            val_loader = DataLoader(val_subset, pin_memory=True,
+                                    sampler=CPUSampler(train_subset),
                                     batch_size=self.config.batch_size,
                                     num_workers=self.config.num_workers)
-
+            
             # Reset the model
-            self.model.apply(self.model._init_weights)
+            self.model.apply(self.model.module._init_weights)
 
             # Initialize optimizer
-            optimizer = self.model.configure_optimizers(self.config)
+            optimizer = self.model.module.configure_optimizers(self.config)
 
             # Run training and validation for the current fold
             fold_loss = self.run_fold(train_loader, val_loader, optimizer)
@@ -130,5 +143,3 @@ class Trainer:
         raw_model = self.model.module if hasattr(self.model, "module") else self.model
         logger.info("saving %s", self.config.ckpt_path)
         torch.save(raw_model.state_dict(), self.config.ckpt_path)
-
-
