@@ -45,7 +45,7 @@ target = 'Skeleton' #'Skeleton' #'EQ'
 const_range = [-2.1, 2.1] # constant range to generate during training only if target is Skeleton
 decimals = 8 # decimals of the points only if target is Skeleton
 trainRange = [-3.0,3.0] # support range to generate during training only if target is Skeleton
-dataDir = '/root/symbolicgpt/Datasets'
+dataDir = os.path.join(os.getcwd(), 'datasets')
 dataTestFolder = '1Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_30Points/Test'
 dataInfo = 'XYE_{}Var_{}Points_{}EmbeddingSize'.format(numVars, numPoints, embeddingSize)
 titleTemplate = "{} equations of {} variables - Benchmark"
@@ -78,7 +78,8 @@ if os.path.isfile(train_file) and not scratch:
         train_dataset, trainText, chars = pickle.load(f)
 else:
     # process training files from scratch
-    path = '{}/{}/Train/*.json'.format(dataDir, dataFolder)    
+    path = '{}\\{}\\Train\\*.json'.format(dataDir, dataFolder)    
+    print(path)
     files = glob.glob(path)[:maxNumFiles]
     text = processDataFiles(files)
     chars = sorted(list(set(text)) + ['_', 'T', '<', '>', ':']) # extract unique characters from the text before converting the text to a list, # T is for the test data
