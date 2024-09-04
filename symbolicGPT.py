@@ -79,6 +79,7 @@ if os.path.isfile(train_file) and not scratch:
 else:
     # process training files from scratch
     path = '{}/{}/Train/*.json'.format(dataDir, dataFolder)
+    print(path)
     files = glob.glob(path)[:maxNumFiles]
     text = processDataFiles(files)
     chars = sorted(list(set(text)) + ['_', 'T', '<', '>', ':']) # extract unique characters from the text before converting the text to a list, # T is for the test data
