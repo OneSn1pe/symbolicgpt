@@ -69,25 +69,24 @@ class Trainer:
 
     def cross_validate(self, num_folds=5):
         print(f"Starting cross-validation with {num_folds} folds")
-        print(f"Train dataset size in cross_validate: {len(self.train_dataset)}")
-        folds = create_k_folds(self.train_dataset.data, num_folds=num_folds)
-        val_indices = [idx for idx in val_indices if idx < len(self.train_dataset)]
         total_size = len(self.train_dataset)
-        best_fold_loss = float('inf')
-        best_fold_model = None
+        print(f"Total dataset size: {total_size}")
 
-        for fold_idx, (train_indices, val_indices) in enumerate(folds):
-            print(f"Fold {fold_idx + 1}:")
-            print(f"  Train indices: {len(train_indices)}, min: {min(train_indices)}, max: {max(train_indices)}")
-            print(f"  Val indices: {len(val_indices)}, min: {min(val_indices)}, max: {max(val_indices)}")
-            print(f"Starting fold {fold_idx + 1}/{num_folds}")
+        indices = list(range(total_size))
+        np.random.shuffle(indices)
 
-        # Ensure indices are within bounds
-            total_size = len(self.train_dataset)
-            train_indices = [idx for idx in train_indices if idx < total_size]
-            val_indices = [idx for idx in val_indices if idx < total_size]
+        fold_size = total_size // num_folds
+    
+        for fold_idx in range(num_folds):
+            print(f"Processing fold {fold_idx + 1}")
+            val_start = fold_idx * fold_size
+            val_end = val_start + fold_size if fold_idx < num_folds - 1 else total_size
 
-        # Create data loaders for the current fold
+            val_indices = indices[val_start:val_end]
+            train_indices = [idx for idx in indices if idx not in val_indices]
+
+            print(f"Train set size: {len(train_indices)}, Val set size: {len(val_indices)}")
+
             train_subset = Subset(self.train_dataset, train_indices)
             val_subset = Subset(self.train_dataset, val_indices)
 
@@ -100,22 +99,23 @@ class Trainer:
                                 batch_size=self.config.batch_size,
                                 num_workers=self.config.num_workers)
 
-        # Reset the model
             self.model.apply(self.model.module._init_weights)
-
-        # Initialize optimizer
             optimizer = self.model.module.configure_optimizers(self.config)
 
-        # Run training and validation for the current fold
             try:
                 fold_loss = self.run_fold(train_loader, val_loader, optimizer)
             
                 if fold_loss < best_fold_loss:
                     best_fold_loss = fold_loss
                     best_fold_model = self.model.state_dict()
+
+                fold_loss = self.run_fold(train_loader, val_loader, optimizer)
+                print(f"Fold {fold_idx + 1} loss: {fold_loss}")
             except Exception as e:
                 print(f"Error in fold {fold_idx + 1}: {str(e)}")
-            continue
+                continue
+
+        print("Cross-validation completed")
 
         if best_fold_model is not None:
         # Load the best model from cross-validation
