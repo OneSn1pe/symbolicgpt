@@ -68,13 +68,18 @@ class Trainer:
         self.best_loss = best
 
     def cross_validate(self, num_folds=5):
+        print(f"Starting cross-validation with {num_folds} folds")
+        print(f"Train dataset size in cross_validate: {len(self.train_dataset)}")
+        folds = create_k_folds(self.train_dataset.data, num_folds=num_folds)
         val_indices = [idx for idx in val_indices if idx < len(self.train_dataset)]
         total_size = len(self.train_dataset)
-        folds = create_k_folds(self.train_dataset.data, num_folds=num_folds)
         best_fold_loss = float('inf')
         best_fold_model = None
 
         for fold_idx, (train_indices, val_indices) in enumerate(folds):
+            print(f"Fold {fold_idx + 1}:")
+            print(f"  Train indices: {len(train_indices)}, min: {min(train_indices)}, max: {max(train_indices)}")
+            print(f"  Val indices: {len(val_indices)}, min: {min(val_indices)}, max: {max(val_indices)}")
             print(f"Starting fold {fold_idx + 1}/{num_folds}")
 
         # Ensure indices are within bounds
