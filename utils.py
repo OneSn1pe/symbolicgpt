@@ -22,6 +22,7 @@ def set_seed(seed):
 
 
 def create_k_folds(data, num_folds=5, seed=42):
+    print(f"Creating {num_folds} folds for data of size {len(data)}")
     total_size = len(data)
     kf = KFold(n_splits=num_folds, shuffle=True, random_state=seed)
     indices = np.arange(total_size)
@@ -408,7 +409,8 @@ class CharDataset(Dataset):
         self.augment = augment
     
     def __len__(self):
-        return len(self.data)-1
+        print(f"Length of dataset requested: {len(self.data)}")
+        return len(self.data)
 
     def __getitem__(self, idx):
         # grab an example from the data
