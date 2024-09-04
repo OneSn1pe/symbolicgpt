@@ -77,18 +77,23 @@ class Trainer:
         for fold_idx, (train_indices, val_indices) in enumerate(folds):
             print(f"Starting fold {fold_idx + 1}/{num_folds}")
 
+        # Ensure indices are within bounds
+            total_size = len(self.train_dataset)
+            train_indices = [idx for idx in train_indices if idx < total_size]
+            val_indices = [idx for idx in val_indices if idx < total_size]
+
         # Create data loaders for the current fold
             train_subset = Subset(self.train_dataset, train_indices)
             val_subset = Subset(self.train_dataset, val_indices)
 
             train_loader = DataLoader(train_subset, pin_memory=True,
-                                    sampler=CPUSampler(train_subset),
-                                    batch_size=self.config.batch_size,
-                                    num_workers=self.config.num_workers)
+                                  sampler=CPUSampler(train_subset),
+                                  batch_size=self.config.batch_size,
+                                  num_workers=self.config.num_workers)
             val_loader = DataLoader(val_subset, pin_memory=True,
-                                    sampler=CPUSampler(val_subset),
-                                    batch_size=self.config.batch_size,
-                                    num_workers=self.config.num_workers)
+                                sampler=CPUSampler(val_subset),
+                                batch_size=self.config.batch_size,
+                                num_workers=self.config.num_workers)
 
         # Reset the model
             self.model.apply(self.model.module._init_weights)
@@ -105,7 +110,7 @@ class Trainer:
                     best_fold_model = self.model.state_dict()
             except Exception as e:
                 print(f"Error in fold {fold_idx + 1}: {str(e)}")
-                continue
+            continue
 
         if best_fold_model is not None:
         # Load the best model from cross-validation
