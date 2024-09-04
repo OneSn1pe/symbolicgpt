@@ -45,6 +45,7 @@ target = 'Skeleton' #'Skeleton' #'EQ'
 const_range = [-2.1, 2.1] # constant range to generate during training only if target is Skeleton
 decimals = 8 # decimals of the points only if target is Skeleton
 trainRange = [-3.0,3.0] # support range to generate during training only if target is Skeleton
+testRange = [[-5.0, 3.0],[-3.0, 5.0]]
 dataDir = os.path.join(os.getcwd(), 'datasets')
 dataTestFolder = '1Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_30Points/Test'
 dataInfo = 'XYE_{}Var_{}Points_{}EmbeddingSize'.format(numVars, numPoints, embeddingSize)
@@ -94,6 +95,7 @@ else:
 
     # with open(train_file, 'wb') as f:
     #     pickle.dump([train_dataset,trainText,chars], f)
+
 
 # create the model
 pconf = PointNetConfig(embeddingSize=embeddingSize, 
