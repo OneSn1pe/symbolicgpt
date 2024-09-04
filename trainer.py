@@ -68,6 +68,7 @@ class Trainer:
         self.best_loss = best
 
 def cross_validate(self, num_folds=5):
+    val_indices = [idx for idx in val_indices if idx < len(self.train_dataset)]
     total_size = len(self.train_dataset)
     folds = create_k_folds(self.train_dataset.data, num_folds=num_folds)
     best_fold_loss = float('inf')
