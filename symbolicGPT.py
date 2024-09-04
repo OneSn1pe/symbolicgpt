@@ -90,6 +90,8 @@ else:
     train_dataset = CharDataset(trainText, blockSize, chars, numVars=numVars, 
                                 numYs=numYs, numPoints=numPoints, target=target, addVars=addVars,
                                 const_range=const_range, xRange=trainRange, decimals=decimals, augment=False)
+    print(f"Total dataset size: {len(train_dataset)}")
+
     # with open(train_file, 'wb') as f:
     #     pickle.dump([train_dataset,trainText,chars], f)
 
