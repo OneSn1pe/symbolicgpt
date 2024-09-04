@@ -22,10 +22,19 @@ def set_seed(seed):
 
 
 def create_k_folds(data, num_folds=5, seed=42):
+    total_size = len(data)
     kf = KFold(n_splits=num_folds, shuffle=True, random_state=seed)
-    indices = np.arange(len(data))
+    indices = np.arange(total_size)
     folds = list(kf.split(indices))
-    return folds
+    
+    # Ensure all indices are within bounds
+    validated_folds = []
+    for train_indices, val_indices in folds:
+        train_indices = train_indices[train_indices < total_size]
+        val_indices = val_indices[val_indices < total_size]
+        validated_folds.append((train_indices, val_indices))
+    
+    return validated_folds
 
 
 def top_k_logits(logits, k):
