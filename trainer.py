@@ -125,17 +125,22 @@ def cross_validate(self, num_folds=5):
 
         return best_val_loss
 
-    def run_epoch(self, loader, optimizer, is_train=True):
-        model = self.model
-        model.train(is_train)
-        losses = []
-        pbar = tqdm(enumerate(loader), total=len(loader))
-        for it, (x, y, p, v) in pbar:
-            x, y, p, v = x.to(self.device), y.to(self.device), p.to(self.device), v.to(self.device)
+def run_epoch(self, loader, optimizer, is_train=True):
+    model = self.model
+    model.train(is_train)
+    losses = []
+    pbar = tqdm(enumerate(loader), total=len(loader))
+    for it, (x, y, p, v) in pbar:
+        try:
+            # Move data to the correct device
+            x = x.to(self.device)
+            y = y.to(self.device)
+            p = p.to(self.device)
+            v = v.to(self.device)
+
             with torch.set_grad_enabled(is_train):
                 logits, loss = model(x, y, p, v, tokenizer=self.train_dataset.itos)
-                loss = loss.mean()
-                losses.append(loss.item())
+                loss = loss.mean()  # In case of multi-GPU setup
 
             if is_train:
                 model.zero_grad()
@@ -143,9 +148,24 @@ def cross_validate(self, num_folds=5):
                 torch.nn.utils.clip_grad_norm_(model.parameters(), self.config.grad_norm_clip)
                 optimizer.step()
 
-            pbar.set_description(f"{'train' if is_train else 'val'} loss {loss.item():.5f}")
+            losses.append(loss.item())
 
-        return float(np.mean(losses))
+            # Update progress bar
+            pbar.set_description(f"{'train' if is_train else 'val'} loss: {loss.item():.5f}")
+
+        except RuntimeError as e:
+            if "out of memory" in str(e):
+                print(f"WARNING: ran out of memory in {'training' if is_train else 'validation'}, skipping batch")
+                if hasattr(torch.cuda, 'empty_cache'):
+                    torch.cuda.empty_cache()
+            else:
+                print(f"RuntimeError in {'training' if is_train else 'validation'} batch {it}: {str(e)}")
+            continue
+        except Exception as e:
+            print(f"Error in {'training' if is_train else 'validation'} batch {it}: {str(e)}")
+            continue
+
+    return float(np.mean(losses)) if losses else float('inf')
 
     def save_checkpoint(self):
         raw_model = self.model.module if hasattr(self.model, "module") else self.model
