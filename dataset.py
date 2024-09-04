@@ -188,6 +188,7 @@ def main():
     sortY = False # if the data is sorted based on y
     numSamplesEachEq = 50
     threshold = 5000
+    templateProb = 0.1
     templatesEQs = None
     templatesEQs = {
         1: [
