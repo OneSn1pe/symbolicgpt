@@ -81,6 +81,7 @@ else:
     path = '{}/{}/Train/*.json'.format(dataDir, dataFolder)
     print(path)
     files = glob.glob(path)[:maxNumFiles]
+    print(files)
     text = processDataFiles(files)
     chars = sorted(list(set(text)) + ['_', 'T', '<', '>', ':']) # extract unique characters from the text before converting the text to a list, # T is for the test data
     text = text.split('\n') # convert the raw text to a set of examples
