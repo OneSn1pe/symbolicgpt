@@ -67,43 +67,51 @@ class Trainer:
         
         self.best_loss = best
 
-    def cross_validate(self, num_folds=5):
-        folds = create_k_folds(self.train_dataset.data, num_folds=num_folds)
-        best_fold_loss = float('inf')
-        best_fold_model = None
+def cross_validate(self, num_folds=5):
+    total_size = len(self.train_dataset)
+    folds = create_k_folds(self.train_dataset.data, num_folds=num_folds)
+    best_fold_loss = float('inf')
+    best_fold_model = None
 
-        for fold_idx, (train_indices, val_indices) in enumerate(folds):
-            print(f"Starting fold {fold_idx + 1}/{num_folds}")
+    for fold_idx, (train_indices, val_indices) in enumerate(folds):
+        print(f"Starting fold {fold_idx + 1}/{num_folds}")
 
-            # Create data loaders for the current fold           
-            train_subset = torch.utils.data.Subset(self.train_dataset, train_indices)
-            val_subset = torch.utils.data.Subset(self.train_dataset, val_indices)
+        # Create data loaders for the current fold
+        train_subset = Subset(self.train_dataset, train_indices)
+        val_subset = Subset(self.train_dataset, val_indices)
 
-            train_loader = DataLoader(train_subset, pin_memory=True,
-                                      sampler=CPUSampler(train_subset),
-                                      batch_size=self.config.batch_size,
-                                      num_workers=self.config.num_workers)
-            val_loader = DataLoader(val_subset, pin_memory=True,
-                                    sampler=CPUSampler(train_subset),
-                                    batch_size=self.config.batch_size,
-                                    num_workers=self.config.num_workers)
-            
-            # Reset the model
-            self.model.apply(self.model.module._init_weights)
+        train_loader = DataLoader(train_subset, pin_memory=True,
+                                  sampler=CPUSampler(train_subset),
+                                  batch_size=self.config.batch_size,
+                                  num_workers=self.config.num_workers)
+        val_loader = DataLoader(val_subset, pin_memory=True,
+                                sampler=CPUSampler(val_subset),
+                                batch_size=self.config.batch_size,
+                                num_workers=self.config.num_workers)
 
-            # Initialize optimizer
-            optimizer = self.model.module.configure_optimizers(self.config)
+        # Reset the model
+        self.model.apply(self.model.module._init_weights)
 
-            # Run training and validation for the current fold
+        # Initialize optimizer
+        optimizer = self.model.module.configure_optimizers(self.config)
+
+        # Run training and validation for the current fold
+        try:
             fold_loss = self.run_fold(train_loader, val_loader, optimizer)
             
             if fold_loss < best_fold_loss:
                 best_fold_loss = fold_loss
                 best_fold_model = self.model.state_dict()
+        except Exception as e:
+            print(f"Error in fold {fold_idx + 1}: {str(e)}")
+            continue
 
+    if best_fold_model is not None:
         # Load the best model from cross-validation
         self.model.load_state_dict(best_fold_model)
         print(f"Best fold validation loss: {best_fold_loss}")
+    else:
+        print("No successful folds completed. Check your data and model.")
 
     def run_fold(self, train_loader, val_loader, optimizer):
         # Train and validate for one fold
