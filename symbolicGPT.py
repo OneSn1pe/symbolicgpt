@@ -78,7 +78,7 @@ if os.path.isfile(train_file) and not scratch:
         train_dataset, trainText, chars = pickle.load(f)
 else:
     # process training files from scratch
-    path = '{}\\{}\\Train\\*.json'.format(dataDir, dataFolder)
+    path = '{}/{}/Train/*.json'.format(dataDir, dataFolder)
     print(path)
     files = glob.glob(path)[:maxNumFiles]
     print(len(files))
