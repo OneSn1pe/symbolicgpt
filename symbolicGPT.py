@@ -91,7 +91,7 @@ else:
     train_dataset = CharDataset(trainText, blockSize, chars, numVars=numVars, 
                                 numYs=numYs, numPoints=numPoints, target=target, addVars=addVars,
                                 const_range=const_range, xRange=trainRange, decimals=decimals, augment=False)
-    print(f"Total dataset size: {len(train_dataset)}")
+    print(f"Train dataset size: {len(train_dataset)}")
 
     # with open(train_file, 'wb') as f:
     #     pickle.dump([train_dataset,trainText,chars], f)
@@ -115,7 +115,11 @@ tconf = TrainerConfig(max_epochs=numEpochs, batch_size=batchSize,
                       lr_decay=True, warmup_tokens=512*20, 
                       final_tokens=2*len(train_dataset)*blockSize,
                       num_workers=0, ckpt_path=ckptPath)
+print(f"Train dataset size before Trainer creation: {len(train_dataset)}")
 trainer = Trainer(model, train_dataset, None, tconf, bestLoss, device=device)
+print(f"Train dataset size in Trainer: {len(trainer.train_dataset)}")
+
+
 
 try:
     # Perform cross-validation
