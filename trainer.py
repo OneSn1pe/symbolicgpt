@@ -133,17 +133,17 @@ class Trainer:
 
 
 
-        def run_fold(self, train_loader, val_loader, optimizer):
+    def run_fold(self, train_loader, val_loader, optimizer):
             # Train and validate for one fold
-            best_val_loss = float('inf')
-            for epoch in range(self.config.max_epochs):
-                self.run_epoch(train_loader, optimizer, is_train=True)
-                val_loss = self.run_epoch(val_loader, optimizer, is_train=False)
+        best_val_loss = float('inf')
+        for epoch in range(self.config.max_epochs):
+            self.run_epoch(train_loader, optimizer, is_train=True)
+            val_loss = self.run_epoch(val_loader, optimizer, is_train=False)
                 
-                if val_loss < best_val_loss:
-                    best_val_loss = val_loss
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
 
-            return best_val_loss
+        return best_val_loss
 
     def run_epoch(self, loader, optimizer, is_train=True):
         model = self.model
