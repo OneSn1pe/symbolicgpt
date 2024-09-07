@@ -68,67 +68,72 @@ class Trainer:
         self.best_loss = best
 
     def cross_validate(self, num_folds=5):
-        print(f"Starting cross-validation with {num_folds} folds")
+        import numpy as np
+from sklearn.model_selection import KFold
+import torch
+from torch.utils.data import Subset, DataLoader
+
+def cross_validate(self, num_folds=5):
+    print(f"Starting cross-validation with {num_folds} folds")
     
-        total_size = len(self.train_dataset)
-        print(f"Total dataset size: {total_size}")
+    total_size = len(self.train_dataset)
+    print(f"Total dataset size: {total_size}")
 
-        folds = create_k_folds(self.train_dataset, num_folds=num_folds)
-        print(f"Number of folds created: {len(folds)}")
+    # Create indices for the entire dataset
+    all_indices = np.arange(total_size)
 
-        best_fold_loss = float('inf')
-        best_fold_model = None
+    # Use KFold to create splits
+    kf = KFold(n_splits=num_folds, shuffle=True, random_state=42)
 
-        for fold_idx, (train_indices, val_indices) in enumerate(folds):
-            print(f"\nStarting fold {fold_idx + 1}/{num_folds}")
-            print(f"Number of train indices: {len(train_indices)}")
-            print(f"Number of val indices: {len(val_indices)}")
-            print(f"Max train index: {max(train_indices)}, Min train index: {min(train_indices)}")
-            print(f"Max val index: {max(val_indices)}, Min val index: {min(val_indices)}")
+    best_fold_loss = float('inf')
+    best_fold_model = None
 
-            if max(train_indices) >= total_size or max(val_indices) >= total_size:
-                print(f"WARNING: Index out of bounds in fold {fold_idx + 1}")
-                continue
+    for fold_idx, (train_idx, val_idx) in enumerate(kf.split(all_indices)):
+        print(f"\nStarting fold {fold_idx + 1}/{num_folds}")
 
-            train_subset = torch.utils.data.Subset(self.train_dataset, train_indices)
-            val_subset = torch.utils.data.Subset(self.train_dataset, val_indices)
+        # Create subsets using the split indices
+        train_subset = Subset(self.train_dataset, all_indices[train_idx])
+        val_subset = Subset(self.train_dataset, all_indices[val_idx])
 
-            print(f"Train subset size: {len(train_subset)}")
-            print(f"Val subset size: {len(val_subset)}")
+        print(f"Train subset size: {len(train_subset)}")
+        print(f"Val subset size: {len(val_subset)}")
 
-            train_loader = DataLoader(train_subset, pin_memory=True,
-                                  sampler=CPUSampler(train_subset),
+        # Create data loaders
+        train_loader = DataLoader(train_subset, 
                                   batch_size=self.config.batch_size,
-                                  num_workers=self.config.num_workers)
-            val_loader = DataLoader(val_subset, pin_memory=True,
-                                sampler=CPUSampler(val_subset),
+                                  sampler=CPUSampler(train_subset),
+                                  num_workers=self.config.num_workers,
+                                  pin_memory=True)
+        val_loader = DataLoader(val_subset, 
                                 batch_size=self.config.batch_size,
-                                num_workers=self.config.num_workers)
+                                sampler=CPUSampler(val_subset),
+                                num_workers=self.config.num_workers,
+                                pin_memory=True)
 
         # Reset the model
-            self.model.apply(self.model.module._init_weights)
+        self.model.apply(self.model.module._init_weights)
         
         # Initialize optimizer
-            optimizer = self.model.module.configure_optimizers(self.config)
+        optimizer = self.model.module.configure_optimizers(self.config)
         
         # Run training and validation for the current fold
-            try:
-                fold_loss = self.run_fold(train_loader, val_loader, optimizer)
-                print(f"Fold {fold_idx + 1} loss: {fold_loss}")
+        try:
+            fold_loss = self.run_fold(train_loader, val_loader, optimizer)
+            print(f"Fold {fold_idx + 1} loss: {fold_loss}")
 
-                if fold_loss < best_fold_loss:
-                    best_fold_loss = fold_loss
-                    best_fold_model = self.model.state_dict()
-            except Exception as e:
-                print(f"Error in fold {fold_idx + 1}: {str(e)}")
-                continue
+            if fold_loss < best_fold_loss:
+                best_fold_loss = fold_loss
+                best_fold_model = self.model.state_dict()
+        except Exception as e:
+            print(f"Error in fold {fold_idx + 1}: {str(e)}")
+            continue
 
     # Load the best model from cross-validation
-        if best_fold_model is not None:
-            self.model.load_state_state(best_fold_model)
-            print(f"Best fold validation loss: {best_fold_loss}")
-        else:
-            print("Warning: No best model found. Check if all folds failed.")
+    if best_fold_model is not None:
+        self.model.load_state_dict(best_fold_model)
+        print(f"Best fold validation loss: {best_fold_loss}")
+    else:
+        print("Warning: No best model found. Check if all folds failed.")
 
     def run_fold(self, train_loader, val_loader, optimizer):
         # Train and validate for one fold
