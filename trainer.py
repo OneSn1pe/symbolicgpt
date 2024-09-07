@@ -68,6 +68,15 @@ class Trainer:
         self.best_loss = best
 
     def cross_validate(self, num_folds=5):
+        expected_size = 99759  # Replace this with your expected size
+        actual_size = len(self.train_dataset.data)
+    
+        print(f"Expected dataset size: {expected_size}")
+        print(f"Actual dataset size: {actual_size}")
+    
+        if actual_size != expected_size:
+            print(f"WARNING: Dataset size mismatch. Expected {expected_size}, but got {actual_size}.")
+        
         folds = create_k_folds(self.train_dataset.data, num_folds=num_folds)
         best_fold_loss = float('inf')
         best_fold_model = None
