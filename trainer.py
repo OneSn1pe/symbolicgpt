@@ -84,7 +84,7 @@ class Trainer:
                                       batch_size=self.config.batch_size,
                                       num_workers=self.config.num_workers)
             val_loader = DataLoader(val_subset, pin_memory=True,
-                                    sampler=CPUSampler(train_subset),
+                                    sampler=CPUSampler(val_subset),
                                     batch_size=self.config.batch_size,
                                     num_workers=self.config.num_workers)
             
