@@ -79,6 +79,7 @@ def cross_validate(self, num_folds=5):
     
     best_fold_loss = float('inf')
     best_fold_model = None
+    any_fold_successful = False
 
     for fold_idx in range(num_folds):
         print(f"Processing fold {fold_idx + 1}")
@@ -113,16 +114,20 @@ def cross_validate(self, num_folds=5):
                 best_fold_model = self.model.state_dict()
 
             print(f"Fold {fold_idx + 1} loss: {fold_loss}")
+            any_fold_successful = True
         except Exception as e:
             print(f"Error in fold {fold_idx + 1}: {str(e)}")
             continue
 
     print("Cross-validation completed")
 
-    if best_fold_model is not None:
-        # Load the best model from cross-validation
-        self.model.load_state_dict(best_fold_model)
-        print(f"Best fold validation loss: {best_fold_loss}")
+    if any_fold_successful:
+        if best_fold_model is not None:
+            # Load the best model from cross-validation
+            self.model.load_state_dict(best_fold_model)
+            print(f"Best fold validation loss: {best_fold_loss}")
+        else:
+            print("Unexpected state: successful folds but no best model.")
     else:
         print("No successful folds completed. Check your data and model.")
 
