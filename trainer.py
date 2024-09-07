@@ -139,7 +139,7 @@ class Trainer:
         for epoch in range(self.config.max_epochs):
             self.run_epoch(train_loader, optimizer, is_train=True)
             val_loss = self.run_epoch(val_loader, optimizer, is_train=False)
-                
+            
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
 
