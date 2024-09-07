@@ -67,62 +67,64 @@ class Trainer:
         
         self.best_loss = best
 
-    def cross_validate(self, num_folds=5):
-        print(f"Starting cross-validation with {num_folds} folds")
-        total_size = len(self.train_dataset)
-        print(f"Total dataset size: {total_size}")
+def cross_validate(self, num_folds=5):
+    print(f"Starting cross-validation with {num_folds} folds")
+    total_size = len(self.train_dataset)
+    print(f"Total dataset size: {total_size}")
 
-        indices = list(range(total_size))
-        np.random.shuffle(indices)
+    indices = list(range(total_size))
+    np.random.shuffle(indices)
 
-        fold_size = total_size // num_folds
+    fold_size = total_size // num_folds
     
-        for fold_idx in range(num_folds):
-            print(f"Processing fold {fold_idx + 1}")
-            val_start = fold_idx * fold_size
-            val_end = val_start + fold_size if fold_idx < num_folds - 1 else total_size
+    best_fold_loss = float('inf')
+    best_fold_model = None
 
-            val_indices = indices[val_start:val_end]
-            train_indices = [idx for idx in indices if idx not in val_indices]
+    for fold_idx in range(num_folds):
+        print(f"Processing fold {fold_idx + 1}")
+        val_start = fold_idx * fold_size
+        val_end = val_start + fold_size if fold_idx < num_folds - 1 else total_size
 
-            print(f"Train set size: {len(train_indices)}, Val set size: {len(val_indices)}")
+        val_indices = indices[val_start:val_end]
+        train_indices = [idx for idx in indices if idx not in val_indices]
 
-            train_subset = Subset(self.train_dataset, train_indices)
-            val_subset = Subset(self.train_dataset, val_indices)
+        print(f"Train set size: {len(train_indices)}, Val set size: {len(val_indices)}")
 
-            train_loader = DataLoader(train_subset, pin_memory=True,
-                                  sampler=CPUSampler(train_subset),
-                                  batch_size=self.config.batch_size,
-                                  num_workers=self.config.num_workers)
-            val_loader = DataLoader(val_subset, pin_memory=True,
-                                sampler=CPUSampler(val_subset),
-                                batch_size=self.config.batch_size,
-                                num_workers=self.config.num_workers)
+        train_subset = Subset(self.train_dataset, train_indices)
+        val_subset = Subset(self.train_dataset, val_indices)
 
-            self.model.apply(self.model.module._init_weights)
-            optimizer = self.model.module.configure_optimizers(self.config)
+        train_loader = DataLoader(train_subset, pin_memory=True,
+                              sampler=CPUSampler(train_subset),
+                              batch_size=self.config.batch_size,
+                              num_workers=self.config.num_workers)
+        val_loader = DataLoader(val_subset, pin_memory=True,
+                            sampler=CPUSampler(val_subset),
+                            batch_size=self.config.batch_size,
+                            num_workers=self.config.num_workers)
 
-            try:
-                fold_loss = self.run_fold(train_loader, val_loader, optimizer)
-            
-                if fold_loss < best_fold_loss:
-                    best_fold_loss = fold_loss
-                    best_fold_model = self.model.state_dict()
+        self.model.apply(self.model.module._init_weights)
+        optimizer = self.model.module.configure_optimizers(self.config)
 
-                fold_loss = self.run_fold(train_loader, val_loader, optimizer)
-                print(f"Fold {fold_idx + 1} loss: {fold_loss}")
-            except Exception as e:
-                print(f"Error in fold {fold_idx + 1}: {str(e)}")
-                continue
+        try:
+            fold_loss = self.run_fold(train_loader, val_loader, optimizer)
+        
+            if fold_loss < best_fold_loss:
+                best_fold_loss = fold_loss
+                best_fold_model = self.model.state_dict()
 
-        print("Cross-validation completed")
+            print(f"Fold {fold_idx + 1} loss: {fold_loss}")
+        except Exception as e:
+            print(f"Error in fold {fold_idx + 1}: {str(e)}")
+            continue
 
-        if best_fold_model is not None:
+    print("Cross-validation completed")
+
+    if best_fold_model is not None:
         # Load the best model from cross-validation
-            self.model.load_state_dict(best_fold_model)
-            print(f"Best fold validation loss: {best_fold_loss}")
-        else:
-            print("No successful folds completed. Check your data and model.")
+        self.model.load_state_dict(best_fold_model)
+        print(f"Best fold validation loss: {best_fold_loss}")
+    else:
+        print("No successful folds completed. Check your data and model.")
 
     def run_fold(self, train_loader, val_loader, optimizer):
         # Train and validate for one fold
