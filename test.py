@@ -113,10 +113,10 @@ def main(resultDict, modelKey):
     # print a random sample
     idx = np.random.randint(train_dataset.__len__())
     inputs, outputs, points, variables = train_dataset.__getitem__(idx)
-    print('inputs:{}'.format(inputs))
+    # print('inputs:{}'.format(inputs))
     inputs = ''.join([train_dataset.itos[int(i)] for i in inputs])
     outputs = ''.join([train_dataset.itos[int(i)] for i in outputs])
-    print('id:{}\ninputs:{}\noutputs:{}\npoints:{}\nvariables:{}'.format(idx,inputs,outputs,points, variables))
+    # print('id:{}\ninputs:{}\noutputs:{}\npoints:{}\nvariables:{}'.format(idx,inputs,outputs,points, variables))
 
     # load the val dataset
     path = '{}/{}/Val/*.json'.format(dataDir,dataFolder)

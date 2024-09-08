@@ -169,7 +169,7 @@ def plot_and_save_results(resultDict, fName, pconf, titleTemplate, textTest, mod
                 eq = resultDict[fName][modelKey]['trg'][i]
                 predicted = resultDict[fName][modelKey]['prd'][i]
                 print('Test Case {}.'.format(i))
-                print('Target:{}\nSkeleton:{}'.format(eq, predicted))
+                #print('Target:{}\nSkeleton:{}'.format(eq, predicted))
                 print('Err:{}'.format(err))
                 print('') # just an empty line
 
@@ -310,10 +310,10 @@ def generate_sample_and_evaluate(model, t, eq, inputs,
         Yhats.append(Yhat)
     err = relativeErr(Ys,Yhats, info=True)
     
-    print('\nTarget:{}'.format(eq))
-    print('Skeleton+LS:{}'.format(predicted))
+    # print('\nTarget:{}'.format(eq))
+    # print('Skeleton+LS:{}'.format(predicted))
     print('Err:{}'.format(err))
-    print('-'*10)
+    # print('-'*10)
 
     if type(err) is np.complex128 or np.complex:
         err = abs(err.real)
