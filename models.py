@@ -408,8 +408,8 @@ class GPT(nn.Module):
             if printCondition:
                 Target = targets[0]
                 TargetChr = ''.join([tokenizer[int(i)] for i in Target])
-                print('Target:{}'.format(Target))
-                print('Target:{}'.format(TargetChr)) 
+                #print('Target:{}'.format(Target))
+                #print('Target:{}'.format(TargetChr)) 
 
             loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1), 
                                    ignore_index=self.config.padding_idx)
