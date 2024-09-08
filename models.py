@@ -399,8 +399,8 @@ class GPT(nn.Module):
             InputChr = ''.join([tokenizer[int(i)] for i in Input])
             LogitChr = ''.join([tokenizer[int(i)] for i in Logit])
             
-            print('Input:{}\nLogit:{}'.format(Input, Logit))
-            print('Input:{}\nLogit:{}'.format(InputChr, LogitChr)) 
+            #print('Input:{}\nLogit:{}'.format(Input, Logit))
+            #print('Input:{}\nLogit:{}'.format(InputChr, LogitChr)) 
 
         # if we are given some desired targets also calculate the loss
         loss = None
