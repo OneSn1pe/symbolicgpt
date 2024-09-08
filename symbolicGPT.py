@@ -143,7 +143,7 @@ try:
                 
             inputs,outputs,points,variables = batch
 
-            print('Test Case {}.'.format(i))
+            # print('Test Case {}.'.format(i))
             o.write('Test Case {}/{}.\n'.format(i,len(textTest)-1))
 
             t = json.loads(textTest[i])
@@ -177,7 +177,7 @@ try:
             predicted = predicted[0] #if len(predicted[0])>=1 else predicted[1]
             predicted = predicted.strip('<').strip(">")
             
-            print('Target:{}\nSkeleton:{}'.format(target, predicted))
+            # print('Target:{}\nSkeleton:{}'.format(target, predicted))
             
             o.write('{}\n'.format(target))
             o.write('{}:\n'.format('SymbolicGPT'))
@@ -202,7 +202,7 @@ try:
 
             # TODO: let's enjoy GPU
 
-            print('Skeleton+LS:{}'.format(predicted))
+            # print('Skeleton+LS:{}'.format(predicted))
 
             Ys = [] #t['YT']
             Yhats = []
