@@ -68,7 +68,7 @@ class Trainer:
         self.best_loss = best
 
 
-    def cross_validate(self, num_folds=5, seed=42):
+    def cross_validate(self, num_folds=2, seed=42):
         print(f"Starting cross-validation with {num_folds} folds")
     
         total_size = len(self.train_dataset)
