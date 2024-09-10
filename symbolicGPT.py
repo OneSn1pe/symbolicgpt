@@ -115,7 +115,7 @@ trainer = Trainer(model, train_dataset, None, tconf, bestLoss, device=device)
 
 try:
     # Perform cross-validation
-    trainer.cross_validate(num_folds=1)  # Adjust the number of folds as needed
+    trainer.cross_validate(num_folds=2)  # Adjust the number of folds as needed
 except KeyboardInterrupt:
     print('KeyboardInterrupt')
 
