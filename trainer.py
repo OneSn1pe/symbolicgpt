@@ -127,7 +127,8 @@ class Trainer:
     # Load the best model from cross-validation
         if best_fold_model is not None:
             self.model.load_state_dict(best_fold_model)
-            torch.save(best_fold_model, self.config.ckpt_path)
+            #torch.save(best_fold_model, self.config.ckpt_path)
+            best_fold_model.save_checkpoint()
             print(f"Best fold validation loss: {best_fold_loss}")
         else:
             print("Warning: No best model found. Check if all folds failed.")
@@ -167,3 +168,9 @@ class Trainer:
             pbar.set_description(f"{'train' if is_train else 'val'} loss {loss.item():.5f}")
 
         return float(np.mean(losses))
+
+    def save_checkpoint(self):
+        # DataParallel wrappers keep raw model object in .module attribute
+        raw_model = self.model.module if hasattr(self.model, "module") else self.model
+        logger.info("saving %s", self.config.ckpt_path)
+        torch.save(raw_model.state_dict(), self.config.ckpt_path)
