@@ -126,6 +126,17 @@ model = model.eval().to(trainer.device)
 
 # Test the model
 # alright, let's sample some character-level symbolic GPT 
+
+path = f'{dataDir}/{dataTestFolder}/*.json'
+print(f'test path is {path}')
+files = glob.glob(path)
+textTest = processDataFiles(files)
+textTest = textTest.split('\n') # convert the raw text to a set of examples
+# test_dataset_target = CharDataset(textTest, blockSize, chars, target=target)
+test_dataset = CharDataset(textTest, testBlockSize, chars, numVars=numVars, 
+                numYs=numYs, numPoints=numPoints, addVars=addVars,
+                const_range=const_range, xRange=trainRange, decimals=decimals)
+
 loader = torch.utils.data.DataLoader(
                                 test_dataset, 
                                 shuffle=False, 
