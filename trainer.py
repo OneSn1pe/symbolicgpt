@@ -76,7 +76,7 @@ class Trainer:
         print(f"Total dataset size: {total_size}")
 
         val_size = len(self.val_dataset)
-        print(f"Total dataset size: {val_size}")
+        print(f"Total Validation size: {val_size}")
 
         folds = create_k_folds(self.train_dataset, num_folds=num_folds)
         print(f"Number of folds created: {len(folds)}")
