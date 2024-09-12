@@ -93,6 +93,16 @@ else:
     # with open(train_file, 'wb') as f:
     #     pickle.dump([train_dataset,trainText,chars], f)
 
+path = '{}/{}/Val/*.json'.format(dataDir,dataFolder)
+files = glob.glob(path)
+textVal = processDataFiles([files[0]])
+textVal = textVal.split('\n') # convert the raw text to a set of examples
+val_dataset = CharDataset(textVal, blockSize, chars, numVars=numVars, 
+                numYs=numYs, numPoints=numPoints, target=target, addVars=addVars,
+                const_range=const_range, xRange=trainRange, decimals=decimals)
+
+
+
 # create the model
 pconf = PointNetConfig(embeddingSize=embeddingSize, 
                        numberofPoints=numPoints[1]-1, 
@@ -111,7 +121,7 @@ tconf = TrainerConfig(max_epochs=numEpochs, batch_size=batchSize,
                       lr_decay=True, warmup_tokens=512*20, 
                       final_tokens=2*len(train_dataset)*blockSize,
                       num_workers=0, ckpt_path=ckptPath)
-trainer = Trainer(model, train_dataset, None, tconf, bestLoss, device=device)
+trainer = Trainer(model, train_dataset, val_dataset, tconf, bestLoss, device=device)
 
 try:
     # Perform cross-validation
@@ -123,6 +133,8 @@ except KeyboardInterrupt:
 print('The following model {} has been loaded!'.format(ckptPath))
 model.load_state_dict(torch.load(ckptPath))
 model = model.eval().to(trainer.device)
+
+
 
 # Test the model
 # alright, let's sample some character-level symbolic GPT 
