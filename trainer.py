@@ -52,9 +52,10 @@ class CPUSampler(RandomSampler):
         return len(self.data_source)
 
 class Trainer:
-    def __init__(self, model, train_dataset, test_dataset, config, best=None, device='gpu', n_splits=5):
+    def __init__(self, model, train_dataset, val_dataset, test_dataset, config, best=None, device='gpu', n_splits=5):
         self.model = model
         self.train_dataset = train_dataset
+        self.val_dataset = val_dataset
         self.test_dataset = test_dataset
         self.config = config
         self.device = device 
@@ -74,6 +75,9 @@ class Trainer:
         total_size = len(self.train_dataset)
         print(f"Total dataset size: {total_size}")
 
+        val_size = len(self.val_dataset)
+        print(f"Total dataset size: {val_size}")
+
         folds = create_k_folds(self.train_dataset, num_folds=num_folds)
         print(f"Number of folds created: {len(folds)}")
 
@@ -92,7 +96,7 @@ class Trainer:
                 continue
 
             train_subset = torch.utils.data.Subset(self.train_dataset, train_indices)
-            val_subset = torch.utils.data.Subset(self.train_dataset, val_indices)
+            val_subset = torch.utils.data.Subset(self.val_dataset, val_indices)
 
             print(f"Train subset size: {len(train_subset)}")
             print(f"Val subset size: {len(val_subset)}")
