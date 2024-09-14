@@ -57,12 +57,12 @@ def main(resultDict, modelKey):
     trainRange = [-3.0,3.0] # support range to generate during training only if target is Skeleton
     testRange = [[-5.0, 3.0],[-3.0, 5.0]]
     useRange = True
-    dataDir = 'D:/Datasets/Symbolic Dataset/Datasets/FirstDataGenerator/'
+    dataDir = os.path.join(os.getcwd(), 'datasets')    
     dataInfo = 'XYE_{}Var_{}-{}Points_{}EmbeddingSize'.format(numVars, numPoints[0], numPoints[1], embeddingSize)
     titleTemplate = "{} equations of {} variables - Benchmark"
     target = 'Skeleton' #'Skeleton' #'EQ'
-    dataFolder = '3Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_500Points'
-    dataTestFolder = '3Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_500Points/Test'
+    dataFolder = '1Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_30Points'
+    dataTestFolder = '1Var_RandSupport_FixedLength_-3to3_-5.0to-3.0-3.0to5.0_30Points/Test'
     addr = './SavedModels/' # where to save model
     method = 'EMB_SUM' # EMB_CAT/EMB_SUM/OUT_SUM/OUT_CAT/EMB_CON -> whether to concat the embedding or use summation. 
     # EMB_CAT: Concat point embedding to GPT token+pos embedding
