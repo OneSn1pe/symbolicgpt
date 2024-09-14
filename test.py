@@ -49,7 +49,7 @@ def main(resultDict, modelKey):
     numPoints=[30,31] # number of points that we are going to receive to make a prediction about f given x and y, if you don't know then use the maximum
     numVars=1 # the dimenstion of input points x, if you don't know then use the maximum
     numYs=1 # the dimension of output points y = f(x), if you don't know then use the maximum
-    blockSize = 200 # spatial extent of the model for its context
+    blockSize = 64 # spatial extent of the model for its context
     testBlockSize = 400
     batchSize = 128 # batch size of training data
     const_range = [-2.1, 2.1] # constant range to generate during training only if target is Skeleton
