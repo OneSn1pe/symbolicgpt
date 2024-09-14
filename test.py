@@ -46,12 +46,12 @@ def main(resultDict, modelKey):
     parallel = False
     scratch=True # if you want to ignore the cache and start for scratch
     embeddingSize = 512 # the hidden dimension of the representation of both GPT and PT
-    numPoints=[500,501] # number of points that we are going to receive to make a prediction about f given x and y, if you don't know then use the maximum
-    numVars=3 # the dimenstion of input points x, if you don't know then use the maximum
+    numPoints=[30,31] # number of points that we are going to receive to make a prediction about f given x and y, if you don't know then use the maximum
+    numVars=1 # the dimenstion of input points x, if you don't know then use the maximum
     numYs=1 # the dimension of output points y = f(x), if you don't know then use the maximum
-    blockSize = 64 # spatial extent of the model for its context
+    blockSize = 200 # spatial extent of the model for its context
     testBlockSize = 400
-    batchSize = 64 # batch size of training data
+    batchSize = 128 # batch size of training data
     const_range = [-2.1, 2.1] # constant range to generate during training only if target is Skeleton
     decimals = 8 # decimals of the points only if target is Skeleton
     trainRange = [-3.0,3.0] # support range to generate during training only if target is Skeleton
