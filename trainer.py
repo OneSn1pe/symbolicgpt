@@ -17,6 +17,8 @@ from torch.utils.data.dataloader import DataLoader
 from sklearn.model_selection import KFold
 from torch.utils.data import Subset, RandomSampler
 from utils import create_k_folds
+import matplotlib.pyplot as plt
+
 
 
 logger = logging.getLogger(__name__)
@@ -67,8 +69,21 @@ class Trainer:
         
         self.best_loss = best
 
+    def plot_learning_curves(fold_losses):
+        plt.figure(figsize=(10, 6))
+        for i, losses in enumerate(fold_losses):
+            plt.plot(losses['train'], label=f'Fold {i+1} Train')
+            plt.plot(losses['val'], label=f'Fold {i+1} Val')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Learning Curves for K-Fold Cross Validation')
+        plt.legend()
+        plt.savefig('learning_curves.png')
+        plt.close()
 
     def cross_validate(self, num_folds=5, seed=42):
+        fold_losses = []
+        
         print(f"Starting cross-validation with {num_folds} folds")
     
         total_size = len(self.train_dataset)
@@ -137,16 +152,19 @@ class Trainer:
 
 
     def run_fold(self, train_loader, val_loader, optimizer):
-            # Train and validate for one fold
         best_val_loss = float('inf')
+        train_losses = []
+        val_losses = []
         for epoch in range(self.config.max_epochs):
-            self.run_epoch(train_loader, optimizer, is_train=True)
+            train_loss = self.run_epoch(train_loader, optimizer, is_train=True)
             val_loss = self.run_epoch(val_loader, optimizer, is_train=False)
-            
+            train_losses.append(train_loss)
+            val_losses.append(val_loss)
+        
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
 
-        return best_val_loss
+        return best_val_loss, train_losses, val_losses
 
     def run_epoch(self, loader, optimizer, is_train=True):
         model = self.model
