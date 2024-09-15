@@ -10,6 +10,7 @@ logging.basicConfig(
 )
 
 # load libraries
+import time
 import os
 import glob
 import json
@@ -120,6 +121,8 @@ except KeyboardInterrupt:
     print('KeyboardInterrupt')
 
 # load the best model
+print("Training complete. Displaying learning curves...")
+time.sleep(5)  # Keep the plot window open for 5 seconds
 print('The following model {} has been loaded!'.format(ckptPath))
 model.load_state_dict(torch.load(ckptPath))
 model = model.eval().to(trainer.device)

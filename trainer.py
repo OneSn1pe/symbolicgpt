@@ -54,16 +54,39 @@ class CPUSampler(RandomSampler):
         return len(self.data_source)
     
 def plot_learning_curves(fold_losses):
+    num_folds = len(fold_losses)
+    fig, axes = plt.subplots(num_folds, 1, figsize=(10, 6*num_folds), sharex=True)
+    fig.suptitle('Learning Curves for K-Fold Cross Validation', fontsize=16)
+
+    for i, losses in enumerate(fold_losses):
+        ax = axes[i] if num_folds > 1 else axes
+        ax.plot(losses['train'], label='Train')
+        ax.plot(losses['val'], label='Validation')
+        ax.set_title(f'Fold {i+1}')
+        ax.set_xlabel('Epoch')
+        ax.set_ylabel('Loss')
+        ax.legend()
+
+    plt.tight_layout()
+    
+    # Display the plot
+    plt.show()
+
+    # Save individual plots
+    for i, losses in enumerate(fold_losses):
         plt.figure(figsize=(10, 6))
-        for i, losses in enumerate(fold_losses):
-            plt.plot(losses['train'], label=f'Fold {i+1} Train')
-            plt.plot(losses['val'], label=f'Fold {i+1} Val')
+        plt.plot(losses['train'], label='Train')
+        plt.plot(losses['val'], label='Validation')
+        plt.title(f'Learning Curves for Fold {i+1}')
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
-        plt.title('Learning Curves for K-Fold Cross Validation')
         plt.legend()
-        plt.savefig('learning_curves.png')
+        plt.savefig(f'learning_curves_fold_{i+1}.png')
         plt.close()
+
+    # Save the combined plot
+    fig.savefig('learning_curves_all_folds.png')
+    plt.close(fig)
 
 class Trainer:
     def __init__(self, model, train_dataset, test_dataset, config, best=None, device='gpu', n_splits=5):
