@@ -52,6 +52,18 @@ class CPUSampler(RandomSampler):
 
     def __len__(self):
         return len(self.data_source)
+    
+def plot_learning_curves(fold_losses):
+        plt.figure(figsize=(10, 6))
+        for i, losses in enumerate(fold_losses):
+            plt.plot(losses['train'], label=f'Fold {i+1} Train')
+            plt.plot(losses['val'], label=f'Fold {i+1} Val')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title('Learning Curves for K-Fold Cross Validation')
+        plt.legend()
+        plt.savefig('learning_curves.png')
+        plt.close()
 
 class Trainer:
     def __init__(self, model, train_dataset, test_dataset, config, best=None, device='gpu', n_splits=5):
@@ -69,17 +81,7 @@ class Trainer:
         
         self.best_loss = best
 
-    def plot_learning_curves(fold_losses):
-        plt.figure(figsize=(10, 6))
-        for i, losses in enumerate(fold_losses):
-            plt.plot(losses['train'], label=f'Fold {i+1} Train')
-            plt.plot(losses['val'], label=f'Fold {i+1} Val')
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
-        plt.title('Learning Curves for K-Fold Cross Validation')
-        plt.legend()
-        plt.savefig('learning_curves.png')
-        plt.close()
+    
 
     def cross_validate(self, num_folds=5, seed=42):
         print(f"Starting cross-validation with {num_folds} folds")
@@ -148,22 +150,22 @@ class Trainer:
             print(f"Best fold validation loss: {best_fold_loss}")
         else:
             print("Warning: No best model found. Check if all folds failed.")
-
+            
 
     def run_fold(self, train_loader, val_loader, optimizer):
         best_val_loss = float('inf')
-        train_losses = []
-        val_losses = []
+        fold_train_losses = []
+        fold_val_losses = []
         for epoch in range(self.config.max_epochs):
             train_loss = self.run_epoch(train_loader, optimizer, is_train=True)
             val_loss = self.run_epoch(val_loader, optimizer, is_train=False)
-            train_losses.append(train_loss)
-            val_losses.append(val_loss)
+            fold_train_losses.append(train_loss)
+            fold_val_losses.append(val_loss)
         
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
 
-        return best_val_loss, train_losses, val_losses
+        return best_val_loss, fold_train_losses, fold_val_losses
 
     def run_epoch(self, loader, optimizer, is_train=True):
         model = self.model
