@@ -101,7 +101,8 @@ variableEmbedding = 'NOT_VAR' # NOT_VAR/LEA_EMB/STR_VAR
 
 ## Run the script to train and test the model
 ```bash
-python symbolicGPT.py
+pip install -r requirements.txt
+run symbolicGPT.py
 ```
 
 # System Spec:
