@@ -21,7 +21,7 @@ def set_seed(seed):
 
 
 
-def create_k_folds(data, num_folds=2, seed=42):
+def create_k_folds(data, num_folds=5, seed=42):
     kf = KFold(n_splits=num_folds, shuffle=True, random_state=seed)
     indices = np.arange(len(data))
     folds = list(kf.split(indices))
