@@ -53,19 +53,28 @@ class CPUSampler(RandomSampler):
     def __len__(self):
         return len(self.data_source)
     
-def plot_learning_curves(fold_losses):
+def plot_learning_curves(fold_losses, avg_train_losses, avg_val_losses):
     num_folds = len(fold_losses)
-    fig, axes = plt.subplots(num_folds, 1, figsize=(10, 6*num_folds), sharex=True)
+    fig, axes = plt.subplots(num_folds + 1, 1, figsize=(10, 6*(num_folds + 1)), sharex=True)
     fig.suptitle('Learning Curves for K-Fold Cross Validation', fontsize=16)
 
     for i, losses in enumerate(fold_losses):
-        ax = axes[i] if num_folds > 1 else axes
+        ax = axes[i]
         ax.plot(losses['train'], label='Train')
         ax.plot(losses['val'], label='Validation')
         ax.set_title(f'Fold {i+1}')
         ax.set_xlabel('Epoch')
         ax.set_ylabel('Loss')
         ax.legend()
+
+    # Plot average losses
+    ax = axes[-1]
+    ax.bar(range(num_folds), avg_train_losses, alpha=0.5, label='Avg Train Loss')
+    ax.bar(range(num_folds), avg_val_losses, alpha=0.5, label='Avg Val Loss')
+    ax.set_title('Average Losses per Fold')
+    ax.set_xlabel('Fold')
+    ax.set_ylabel('Average Loss')
+    ax.legend()
 
     plt.tight_layout()
     
@@ -119,12 +128,13 @@ class Trainer:
         best_fold_model = None
     
         fold_losses = []
+        all_fold_avg_train_losses = []
+        all_fold_avg_val_losses = []
+
         for fold_idx, (train_indices, val_indices) in enumerate(folds):
             print(f"\nStarting fold {fold_idx + 1}/{num_folds}")
             print(f"Number of train indices: {len(train_indices)}")
             print(f"Number of val indices: {len(val_indices)}")
-            print(f"Max train index: {max(train_indices)}, Min train index: {min(train_indices)}")
-            print(f"Max val index: {max(val_indices)}, Min val index: {min(val_indices)}")
 
             if max(train_indices) >= total_size or max(val_indices) >= total_size:
                 print(f"WARNING: Index out of bounds in fold {fold_idx + 1}")
@@ -155,7 +165,14 @@ class Trainer:
             try:
                 fold_loss, fold_train_losses, fold_val_losses = self.run_fold(train_loader, val_loader, optimizer)
                 fold_losses.append({'train': fold_train_losses, 'val': fold_val_losses})
-                print(f"Fold {fold_idx + 1} loss: {fold_loss}")
+                
+                avg_train_loss = np.mean(fold_train_losses)
+                avg_val_loss = np.mean(fold_val_losses)
+                all_fold_avg_train_losses.append(avg_train_loss)
+                all_fold_avg_val_losses.append(avg_val_loss)
+                
+                print(f"Fold {fold_idx + 1} average train loss: {avg_train_loss:.5f}")
+                print(f"Fold {fold_idx + 1} average validation loss: {avg_val_loss:.5f}")
 
                 if fold_loss < best_fold_loss:
                     best_fold_loss = fold_loss
@@ -164,16 +181,21 @@ class Trainer:
                 print(f"Error in fold {fold_idx + 1}: {str(e)}")
                 continue
 
-        plot_learning_curves(fold_losses)
+        # Calculate overall average losses
+        overall_avg_train_loss = np.mean(all_fold_avg_train_losses)
+        overall_avg_val_loss = np.mean(all_fold_avg_val_losses)
+        print(f"\nOverall average train loss: {overall_avg_train_loss:.5f}")
+        print(f"Overall average validation loss: {overall_avg_val_loss:.5f}")
 
-    # Load the best model from cross-validation
+        plot_learning_curves(fold_losses, all_fold_avg_train_losses, all_fold_avg_val_losses)
+
+        # Load the best model from cross-validation
         if best_fold_model is not None:
             self.model.load_state_dict(best_fold_model)
             self.save_checkpoint()
             print(f"Best fold validation loss: {best_fold_loss}")
         else:
             print("Warning: No best model found. Check if all folds failed.")
-            
 
     def run_fold(self, train_loader, val_loader, optimizer):
         best_val_loss = float('inf')
