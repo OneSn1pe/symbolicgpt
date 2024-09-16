@@ -109,18 +109,6 @@ python symbolicGPT.py
 144 gb VRAM + 186 gb RAM
 v48 CPU
 
-# Citation:
-```
-@inproceedings{
-    SymbolicGPT2021,
-    title={SymbolicGPT: A Generative Transformer Model for Symbolic Regression},
-    author={Mojtaba Valipour, Maysum Panju, Bowen You, Ali Ghodsi},
-    booktitle={Preprint Arxiv},
-    year={2021},
-    url={https://arxiv.org/abs/2106.14131},
-    note={Under Review}
-}
-```
 
 # REFERENCES:
 - https://github.com/mojivalipour/symbolicgpt
