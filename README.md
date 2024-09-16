@@ -1,6 +1,4 @@
 
-This is the code for our proposed method, SymbolicGPT. We tried to keep the implementation as simple and clean as possible to make sure it's understandable and easy to reuse. Please feel free to add features and submit a pull-request.
-
 # Results/Models/Datasets
 - Download via [link](https://www.dropbox.com/sh/yq03daorth1h4kj/AADolbgySCjOO18qGoP5Abqfa?dl=0)
 - dataset size reduction can be done manually 
