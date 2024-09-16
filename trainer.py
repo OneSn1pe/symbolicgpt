@@ -9,7 +9,9 @@ import utils
 
 from tqdm import tqdm
 import numpy as np
+import csv
 
+from tabulate import tabulate
 import torch
 import torch.optim as optim
 from torch.optim.lr_scheduler import LambdaLR
@@ -55,9 +57,10 @@ class CPUSampler(RandomSampler):
     
 def plot_learning_curves(fold_losses, avg_train_losses, avg_val_losses):
     num_folds = len(fold_losses)
-    fig, axes = plt.subplots(num_folds + 1, 1, figsize=(10, 6*(num_folds + 1)), sharex=True)
+    fig, axes = plt.subplots(num_folds + 3, 1, figsize=(10, 6*(num_folds + 3)), sharex=True)
     fig.suptitle('Learning Curves for K-Fold Cross Validation', fontsize=16)
 
+    # Individual fold plots
     for i, losses in enumerate(fold_losses):
         ax = axes[i]
         ax.plot(losses['train'], label='Train')
@@ -67,14 +70,36 @@ def plot_learning_curves(fold_losses, avg_train_losses, avg_val_losses):
         ax.set_ylabel('Loss')
         ax.legend()
 
-    # Plot average losses
-    ax = axes[-1]
-    ax.bar(range(num_folds), avg_train_losses, alpha=0.5, label='Avg Train Loss')
-    ax.bar(range(num_folds), avg_val_losses, alpha=0.5, label='Avg Val Loss')
-    ax.set_title('Average Losses per Fold')
-    ax.set_xlabel('Fold')
-    ax.set_ylabel('Average Loss')
-    ax.legend()
+    # Overlaid learning curves
+    ax_overlay_train = axes[-3]
+    ax_overlay_val = axes[-2]
+    
+    for i, losses in enumerate(fold_losses):
+        ax_overlay_train.plot(losses['train'], label=f'Fold {i+1}')
+        ax_overlay_val.plot(losses['val'], label=f'Fold {i+1}')
+    
+    ax_overlay_train.set_title('Overlaid Training Curves')
+    ax_overlay_train.set_xlabel('Epoch')
+    ax_overlay_train.set_ylabel('Loss')
+    ax_overlay_train.legend()
+
+    ax_overlay_val.set_title('Overlaid Validation Curves')
+    ax_overlay_val.set_xlabel('Epoch')
+    ax_overlay_val.set_ylabel('Loss')
+    ax_overlay_val.legend()
+
+    # Average losses
+    ax_avg = axes[-1]
+    x = range(num_folds)
+    width = 0.35
+    ax_avg.bar([i - width/2 for i in x], avg_train_losses, width, label='Avg Train Loss')
+    ax_avg.bar([i + width/2 for i in x], avg_val_losses, width, label='Avg Val Loss')
+    ax_avg.set_title('Average Losses per Fold')
+    ax_avg.set_xlabel('Fold')
+    ax_avg.set_ylabel('Average Loss')
+    ax_avg.set_xticks(x)
+    ax_avg.set_xticklabels([f'Fold {i+1}' for i in x])
+    ax_avg.legend()
 
     plt.tight_layout()
     
@@ -93,9 +118,42 @@ def plot_learning_curves(fold_losses, avg_train_losses, avg_val_losses):
         plt.savefig(f'learning_curves_fold_{i+1}.png')
         plt.close()
 
+    # Save the overlaid plots
+    plt.figure(figsize=(10, 6))
+    for i, losses in enumerate(fold_losses):
+        plt.plot(losses['train'], label=f'Fold {i+1} Train')
+        plt.plot(losses['val'], label=f'Fold {i+1} Val')
+    plt.title('Overlaid Learning Curves for All Folds')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.savefig('learning_curves_overlaid.png')
+    plt.close()
+
     # Save the combined plot
     fig.savefig('learning_curves_all_folds.png')
     plt.close(fig)
+
+def create_loss_table(train_losses, val_losses, overall_train_loss, overall_val_loss):
+        headers = ["Fold", "Avg Train Loss", "Avg Validation Loss"]
+        table_data = []
+    
+        for i, (train_loss, val_loss) in enumerate(zip(train_losses, val_losses), 1):
+            table_data.append([f"Fold {i}", f"{train_loss:.5f}", f"{val_loss:.5f}"])
+    
+        table_data.append(["Overall", f"{overall_train_loss:.5f}", f"{overall_val_loss:.5f}"])
+    
+    # Print the table
+        print("\nCross-Validation Results:")
+        print(tabulate(table_data, headers=headers, tablefmt="grid"))
+    
+    # Save the table as a CSV file
+        with open('cross_validation_results.csv', 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(headers)
+            writer.writerows(table_data)
+    
+        print("\nCross-validation results have been saved to 'cross_validation_results.csv'")
 
 class Trainer:
     def __init__(self, model, train_dataset, test_dataset, config, best=None, device='gpu', n_splits=5):
@@ -187,6 +245,9 @@ class Trainer:
         print(f"\nOverall average train loss: {overall_avg_train_loss:.5f}")
         print(f"Overall average validation loss: {overall_avg_val_loss:.5f}")
 
+        # Create and save the table of losses
+        create_loss_table(all_fold_avg_train_losses, all_fold_avg_val_losses, overall_avg_train_loss, overall_avg_val_loss)
+
         plot_learning_curves(fold_losses, all_fold_avg_train_losses, all_fold_avg_val_losses)
 
         # Load the best model from cross-validation
@@ -196,6 +257,7 @@ class Trainer:
             print(f"Best fold validation loss: {best_fold_loss}")
         else:
             print("Warning: No best model found. Check if all folds failed.")
+    
 
     def run_fold(self, train_loader, val_loader, optimizer):
         best_val_loss = float('inf')

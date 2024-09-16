@@ -4,3 +4,4 @@ matplotlib
 scipy
 tqdm
 scikit-learn
+tabulate
