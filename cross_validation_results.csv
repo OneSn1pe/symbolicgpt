@@ -1,0 +1,7 @@
+Fold,Avg Train Loss,Avg Validation Loss
+Fold 1,0.32908,0.27480
+Fold 2,0.27029,0.25325
+Fold 3,0.25590,0.26972
+Fold 4,0.24714,0.31040
+Fold 5,0.24494,0.28471
+Overall,0.26947,0.27858
